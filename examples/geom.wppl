@@ -1,0 +1,14 @@
+var make_geom = function(p) 
+{
+    return geom = function() 
+    {
+        return flip(p) ? 0 : 1+geom()
+    }
+}
+
+var t1 = Enumerate(make_geom(0.1), 10)
+var t2 = MH(make_geom(0.2), 1000)
+var t3 = ParticleFilter(make_geom(0.4), 1000)
+oed.get_expected_kl([t1, t2, t3], [0.2, 0.3, 0.4])
+
+

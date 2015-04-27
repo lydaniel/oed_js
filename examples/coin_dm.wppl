@@ -1,0 +1,132 @@
+var categorical = function(v,p) {return v[discrete(p)];}
+
+var iota = function(arr, i, limit) {return (i > limit) ? arr : iota(append(arr, i), i+1, limit);};
+var range = function(length) {return iota([], 0, length);};
+
+var rating_prior     = [0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90];
+var rating_prior_pmf = [1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00];
+
+var unfair_prior     = [0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90];
+var unfair_prior_pmf = [1.00, 1.00, 1.00, 1.00, 0.00, 1.00, 1.00, 1.00, 1.00];
+
+var erp_array = function(model, sequence_array)
+{
+    var erps = map(function(x) {return Enumerate(model(x));}, sequence_array);
+    return erps;
+}
+
+var rating_model = function(erp_array)
+{
+    return rating = function()
+    {
+        var samples = map(function(x) {return sample(x);}, erp_array);
+        return JSON.stringify(samples);
+    }
+}
+
+var ranking_model = function(erp_array)
+{
+    return ranking = function()
+    {
+        var samples = map(function(x) {return sample(x);}, erp_array);
+
+        var rank_list = range(samples.length-1);
+        var sorted_rank_list = sort(rank_list, function(x,y) {return (x==y) ? flip(0.5) : gt(x,y);}, 
+                                               function(x) {return samples[x];})
+        return JSON.stringify(sorted_rank_list);
+    }
+}
+
+
+var bias_coin_model = function(sequence)
+{
+    return bias_coin = function()
+    {
+        var rating_p = categorical(rating_prior, rating_prior_pmf);
+        var is_fair = flip(rating_p);
+
+        var fair_p = 0.5;
+        var unfair_p = categorical(unfair_prior, unfair_prior_pmf);
+
+        var coin_p = (is_fair) ? fair_p : unfair_p;
+
+        var sequence_factor = sum(map(function(x) 
+                                      {return (x == '1') ? Math.log(coin_p) : 
+                                                           Math.log(1-coin_p);}, sequence));
+        factor(sequence_factor);
+        return rating_p;
+    }
+}
+
+var markov_coin_model = function(sequence) 
+{
+    return markov_coin = function() 
+    {
+        var rating_p = categorical(rating_prior, rating_prior_pmf);
+        var is_fair = flip(rating_p);
+
+        var fair_p = 0.5;
+        var unfair_p = categorical(unfair_prior, unfair_prior_pmf);
+
+        var coin_p = (is_fair) ? fair_p : unfair_p;
+
+        var sequence_factor = sum(map2(function(x,y) 
+                                       {return (x == y) ? Math.log(1-coin_p) : 
+                                                          Math.log(coin_p);}, 
+                                       sequence.slice(0,sequence.length-1), 
+                                       sequence.slice(1,sequence.length)));
+
+        factor(sequence_factor);
+        return rating_p;
+    }
+}
+
+//var sequence = x;
+//var m1 = Enumerate(bias_coin_model(sequence));
+//m1
+
+/*
+var sequence_array = ['0000', '0001'];
+var m1 = Enumerate(rating_model(erp_array(bias_coin_model, sequence_array)));
+//m1
+var m2 = Enumerate(rating_model(erp_array(markov_coin_model, sequence_array)));
+//m2
+oed.get_expected_kl([m1, m2], [0.5, 0.5]);
+*/
+
+/*
+var sequence = ['0000', '0001', '1010'];
+var m1 = Enumerate(ranking_model(erp_array(bias_coin_model, sequence)));
+var m2 = Enumerate(ranking_model(erp_array(markov_coin_model, sequence)));
+oed.get_expected_kl([m1, m2], [0.5, 0.5]);
+*/
+
+var bin_inputs = ['0000', '0001', '0010', '0011', '0100', '0101', '0110', '0111']
+//var bin_inputs = ['000000', '000001', '000010', '000011', '000100', '000101', '000110', '000111', 
+//                  '001000', '001001', '001010', '001011', '001100', '001101', '001110', '001111',
+//                  '010000', '010001', '010010', '010011', '010100', '010101', '010110', '010111', 
+//                  '011000', '011001', '011010', '011011', '011100', '011101', '011110', '011111']
+
+var inputs = oed.list_product([bin_inputs, bin_inputs, bin_inputs]);
+oed.print(inputs, map(function(x) {
+                        var sequence = x;
+                        //var m1 = Enumerate(rating_model(erp_array(bias_coin_model, sequence)));
+                        //var m2 = Enumerate(rating_model(erp_array(markov_coin_model, sequence)));
+                        var m1 = Enumerate(ranking_model(erp_array(bias_coin_model, sequence)));
+                        var m2 = Enumerate(ranking_model(erp_array(markov_coin_model, sequence)));
+                        return oed.get_expected_kl([m1, m2], [0.5, 0.5]);}, inputs), true)
+
+//oed.cross([['a', 'b', 'c'], ['0', '1', '2', '3', '4'], ['x', 'y']]);
+
+/*
+var inputs = ['000000', '000001', '000010', '000011', '000100', '000101', '000110', '000111', 
+              '001000', '001001', '001010', '001011', '001100', '001101', '001110', '001111',
+              '010000', '010001', '010010', '010011', '010100', '010101', '010110', '010111', 
+              '011000', '011001', '011010', '011011', '011100', '011101', '011110', '011111']
+oed.print(inputs, map(function(x) {
+                        var sequence = x;
+                        var m1 = Enumerate(bias_coin_model(sequence));
+                        var m2 = Enumerate(markov_coin_model(sequence));
+                        return oed.get_expected_kl([m1, m2], [0.5, 0.5]);}, inputs), true)
+                        */
+
