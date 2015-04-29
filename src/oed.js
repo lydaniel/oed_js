@@ -1,8 +1,11 @@
+'use strict';
+
 var pmf = require('./pmf.js');
+var comb = require('./comb.js');
 
 // PMF helper functions 
 
-function normalize(x)
+var normalize = function(x)
 {
     var sum = 0;
     for (var i = 0; i < x.length; i++) 
@@ -14,7 +17,7 @@ function normalize(x)
     return x;
 };
 
-function erp_to_pmf(erp_list) 
+var erp_to_pmf = function(erp_list) 
 {
     var pmf_list = [];
     for (var i = 0; i < erp_list.length; i++) 
@@ -26,7 +29,7 @@ function erp_to_pmf(erp_list)
     return pmf_list;
 };
 
-function homogenize_pmf_list(pmf_list) 
+var homogenize_pmf_list = function(pmf_list) 
 {
     var hpmf_list = [];
 
@@ -87,7 +90,7 @@ function homogenize_pmf_list(pmf_list)
 
 // Expected KL for a set of distributions
 
-function get_expected_kl(erp_list, model_belief) 
+var get_expected_kl = function(erp_list, model_belief) 
 {
     var model_belief = normalize(model_belief)
     if (erp_list.length != model_belief.length)
@@ -110,7 +113,7 @@ function get_expected_kl(erp_list, model_belief)
 
 // Expected KL for a given number of participants
 
-function multinomial_sample(array) 
+var multinomial_sample = function(array) 
 {
     var x = Math.random();
     var prob_accumulator = 0;
@@ -123,7 +126,7 @@ function multinomial_sample(array)
     return array.length;
 };
 
-function get_participants_sampler(pmf_list, num_participants, num_samples) 
+var get_participants_sampler = function(pmf_list, num_participants, num_samples) 
 {
     var sample_counter = [];
     for (var m = 0; m < pmf_list.length; m++)
@@ -149,7 +152,7 @@ function get_participants_sampler(pmf_list, num_participants, num_samples)
     return sample_counter;
 };
 
-function get_entropy_of_response_participants_sample(pmf_list, model_belief, sample_counter, num_participants, num_samples)
+var get_entropy_of_response_participants_sample = function(pmf_list, model_belief, sample_counter, num_participants, num_samples)
 {
     var joint_sample_counter_keys = [];
     for (var m = 0; m < pmf_list.length; m++)
@@ -184,7 +187,7 @@ function get_entropy_of_response_participants_sample(pmf_list, model_belief, sam
     return h_response;
 };
 
-function get_entropy_of_response_given_models_participants_sample(pmf_list, model_belief, sample_counter, num_participants, num_samples)
+var get_entropy_of_response_given_models_participants_sample = function(pmf_list, model_belief, sample_counter, num_participants, num_samples)
 {
     var h_response_g_model = 0;
     for (var m = 0; m < pmf_list.length; m++)
@@ -201,7 +204,7 @@ function get_entropy_of_response_given_models_participants_sample(pmf_list, mode
     return h_response_g_model;
 };
 
-function get_expected_kl_participants_sample(erp_list, model_belief, num_participants, num_samples) 
+var get_expected_kl_participants_sample = function(erp_list, model_belief, num_participants, num_samples) 
 {
     var model_belief = normalize(model_belief)
     if (erp_list.length != model_belief.length)
@@ -218,49 +221,39 @@ function get_expected_kl_participants_sample(erp_list, model_belief, num_partici
 };
 
 // Helper functions
-function list_iteration(base_list, crosser) 
+
+var list_copy = function(l)
 {
-    var list = [];
-    for (var i = 0; i < base_list.length; i++)
-    {
-        for (var j = 0; j < crosser.length; j++)
+    var ll = [];
+    for (var i = 0; i < l.length; i++)
+        ll[i] = l[i];
+
+    return ll;
+}
+
+var find_nearest = function(array, value)
+{
+    var arr_cp = list_copy(array);
+
+    for (var i = 0; i < arr_cp.length; i++)
+        arr_cp[i] -= value;
+
+    for (var i = 0; i < arr_cp.length; i++)
+        arr_cp[i] = Math.abs(arr_cp[i]);
+
+    var smallest = arr_cp[0]
+    var smallest_index = 0;
+    for (var i = 1; i < arr_cp.length; i++)
+        if (arr_cp[i] < smallest)
         {
-            var list_temp = [];
-            for (var k = 0; k < base_list[i].length; k++)
-                list_temp[k] = base_list[i][k];
-
-            list_temp.push(crosser[j])
-            list.push(list_temp)
+            smallest = arr_cp[i];
+            smallest_index = i;
         }
-    }
 
-    return list;
-};
+    return array[smallest_index];
+}
 
-function list_product(array) 
-{
-    var list = [[]];
-    for (var i = 0; i < array.length; i++)
-        list = list_iteration(list, array[i]);
-
-    return list;
-};
-
-/*
-function list_permutations(array) 
-{
-};
-
-function list_combinations(array) 
-{
-};
-
-function list_combinations_with_replacement(array) 
-{
-};
-*/
-
-function print(inputs, kl, sort) 
+var print = function(inputs, kl, sort) 
 {
     var list = [];
     for (var i = 0; i < inputs.length; i++)
@@ -280,7 +273,9 @@ module.exports =
     homogenize_pmf_list : homogenize_pmf_list,
     get_expected_kl : get_expected_kl,
     get_expected_kl_participants_sample: get_expected_kl_participants_sample,
-    list_product: list_product, 
+    list_product: comb.list_product, 
+    list_permutations: comb.list_permutations, 
+    find_nearest: find_nearest, 
     print: print
 };
 

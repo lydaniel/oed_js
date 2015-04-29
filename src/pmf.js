@@ -1,10 +1,12 @@
-function p(x, p) 
+'use strict';
+
+var p = function(x, p) 
 {
     this.x = x;  
     this.p = p;
 };
 
-function pmf() 
+var pmf = function() 
 {
     this.pmf = [];  
 

@@ -101,19 +101,26 @@ var m2 = Enumerate(ranking_model(erp_array(markov_coin_model, sequence)));
 oed.get_expected_kl([m1, m2], [0.5, 0.5]);
 */
 
+//var bin_inputs = ['0000', '0001', '0010', '0011']
+//var bin_inputs = ['A', 'B', 'C', 'D']
 var bin_inputs = ['0000', '0001', '0010', '0011', '0100', '0101', '0110', '0111']
 //var bin_inputs = ['000000', '000001', '000010', '000011', '000100', '000101', '000110', '000111', 
 //                  '001000', '001001', '001010', '001011', '001100', '001101', '001110', '001111',
 //                  '010000', '010001', '010010', '010011', '010100', '010101', '010110', '010111', 
 //                  '011000', '011001', '011010', '011011', '011100', '011101', '011110', '011111']
+//var inputs = oed.list_product([bin_inputs, bin_inputs, bin_inputs]);
+//var inputs = oed.list_permutations(bin_inputs, 1);
+//inputs
 
-var inputs = oed.list_product([bin_inputs, bin_inputs, bin_inputs]);
+//var inputs = oed.list_product([bin_inputs, bin_inputs, bin_inputs]);
+var inputs = oed.list_permutations(bin_inputs, 3);
+//inputs.length
 oed.print(inputs, map(function(x) {
                         var sequence = x;
-                        //var m1 = Enumerate(rating_model(erp_array(bias_coin_model, sequence)));
-                        //var m2 = Enumerate(rating_model(erp_array(markov_coin_model, sequence)));
-                        var m1 = Enumerate(ranking_model(erp_array(bias_coin_model, sequence)));
-                        var m2 = Enumerate(ranking_model(erp_array(markov_coin_model, sequence)));
+                        var m1 = Enumerate(rating_model(erp_array(bias_coin_model, sequence)));
+                        var m2 = Enumerate(rating_model(erp_array(markov_coin_model, sequence)));
+                        //var m1 = Enumerate(ranking_model(erp_array(bias_coin_model, sequence)));
+                        //var m2 = Enumerate(ranking_model(erp_array(markov_coin_model, sequence)));
                         return oed.get_expected_kl([m1, m2], [0.5, 0.5]);}, inputs), true)
 
 //oed.cross([['a', 'b', 'c'], ['0', '1', '2', '3', '4'], ['x', 'y']]);
