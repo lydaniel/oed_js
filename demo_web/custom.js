@@ -65,7 +65,8 @@ function oed_print_kl(store, k, a, x){
     var data = x[0];
     var xlabel = (x[1] == undefined) ? null : x[1];
     var ylabel = (x[2] == undefined) ? null : x[2];
-    bar_chart(resultDivSelector, data.to_expt_list(), data.to_optc_list(), xlabel, ylabel);
+    bar_chart(resultDivSelector, data.to_expt_list(), data.to_optc_list(), 
+              xlabel, ylabel);
     return k(store);
 }
 
@@ -76,8 +77,8 @@ function oed_print_kl_participants(store, k, a, x){
     var data = x[0];
     var xlabel = (x[1] == undefined) ? null : x[1];
     var ylabel = (x[2] == undefined) ? null : x[2];
-    //bar_chart(resultDivSelector, data[0], data[1], xlabel, ylabel);
-    line_chart(resultDivSelector, data.to_expt_list(), data.to_nprt_list(), data.to_optc_list(), xlabel, ylabel);
+    line_chart(resultDivSelector, data.to_expt_list(), data.to_nprt_list(), 
+               data.to_optc_list(), xlabel, ylabel);
     return k(store);
 }
 
@@ -110,66 +111,52 @@ function barChart(containerSelector, labels, counts){
 
 // Line plots
 
-function bar_chart(containerSelector, labels, counts, xlabel, ylabel){
+function bar_chart(containerSelector, expt, optc, xlabel, ylabel){
   $(containerSelector).show();
   var svg = d3.select(containerSelector)
     .append("svg")
     .attr("class", "barChart");
   var data = [];
-  //console.log(labels)
-  //console.log(counts)
-  for (var i=0; i<labels.length; i++){
-    if (counts[i] > 0) {
-      data.push({
-        "Expt": (typeof labels[i] == 'string') ? labels[i] : JSON.stringify(labels[i]),
-        "KL": counts[i]
-      });
-    }
-    //console.log(labels[i]);
+  for (var i = 0; i < expt.length; i++){
+    data.push({
+      "expt": (typeof expt[i] == 'string') ? expt[i] : JSON.stringify(expt[i]),
+      "kl": optc[i]
+    });
   };
-  //console.log(data)
   var chart = new dimple.chart(svg, data);
   chart.setBounds(80, 30, 480, 250);
-  var xAxis = chart.addMeasureAxis("x", "KL");
+  var xAxis = chart.addMeasureAxis("x", "kl");
   xAxis.title = xlabel;
   xAxis.tickFormat = ",.2f";
-  //xAxis.addOrderRule(["1111", "0000", "0001", "1110"]);
-  //var yAxis = chart.addCategoryAxis("y", "Expt");
-  var yAxis = chart.addCategoryAxis("y", "Expt");
+  var yAxis = chart.addCategoryAxis("y", "expt");
   yAxis.title = ylabel;
-  chart.addSeries("Expt", dimple.plot.bar);
-  //chart.addSeries(null, dimple.plot.bar);
+  chart.addSeries("expt", dimple.plot.bar);
   chart.draw();
 }
 
 
-function line_chart(containerSelector, expt, labels, counts, xlabel, ylabel){
+function line_chart(containerSelector, expt, nprt, optc, xlabel, ylabel){
   $(containerSelector).show();
   var svg = d3.select(containerSelector)
     .append("svg")
     .attr("class", "barChart");
   var data = [];
-  for (var i=0; i<labels.length; i++){
-    if (counts[i] > 0) {
-      data.push({
-        //"Label": JSON.stringify(labels[i]),
-        "Expt": expt[i],
-        "Label": labels[i],
-        "Count": counts[i]
-      });
-    }
+  for (var i = 0; i < nprt.length; i++){
+    data.push({
+      "expt": expt[i],
+      "npart": nprt[i],
+      "kl": optc[i]
+    });
   };
   var chart = new dimple.chart(svg, data);
   chart.setBounds(80, 30, 480, 250);
-  //var xAxis = chart.addMeasureAxis("x", "Count");
-  var xAxis = chart.addCategoryAxis("x", "Label");
+  var xAxis = chart.addCategoryAxis("x", "npart");
   xAxis.title = xlabel;
-  //xAxis.tickFormat = ",.2f";
-  //var yAxis = chart.addCategoryAxis("y", "Count");
-  var yAxis = chart.addMeasureAxis("y", "Count");
-  //yAxis.title = null;
+  xAxis.tickFormat = ",.2f";
+  var yAxis = chart.addMeasureAxis("y", "kl");
+  yAxis.title = null;
   yAxis.title = ylabel;
-  chart.addSeries("Expt", dimple.plot.line);
+  chart.addSeries("expt", dimple.plot.line);
   chart.draw();
 }
 
