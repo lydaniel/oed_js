@@ -2,6 +2,7 @@
 
 var pmf = require('./pmf.js');
 var comb = require('./comb.js');
+var print = require('./print.js');
 
 // PMF helper functions 
 
@@ -253,18 +254,6 @@ var find_nearest = function(array, value)
     return array[smallest_index];
 }
 
-var print = function(inputs, kl, sort) 
-{
-    var list = [];
-    for (var i = 0; i < inputs.length; i++)
-        list.push({input: inputs[i], output: kl[i]});
-
-    if (sort == true)
-        list.sort(function(x,y){return y.output - x.output;});
-
-    return list;
-};
-
 // Export
 
 module.exports = 
@@ -276,7 +265,10 @@ module.exports =
     list_product: comb.list_product, 
     list_permutations: comb.list_permutations, 
     find_nearest: find_nearest, 
-    print: print
+    format: print.format,
+    log: print.log,
+    make_data: print.make_data,
+    data: print.data
 };
 
 
