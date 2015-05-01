@@ -7,7 +7,7 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>webppl - probabilistic programming for the web</title>
+        <title>optimal experiment design for webppl</title>
 
         <link rel="stylesheet" href="http://webppl.org/bower_components/bootstrap/dist/css/bootstrap.min.css">
         <link rel="stylesheet" href="http://webppl.org/bower_components/bootstrap/dist/css/bootstrap-theme.min.css">
@@ -28,7 +28,7 @@
         <script src="http://dippl.org/node_modules/codemirror/mode/javascript/javascript.js"></script>
         <script src="http://dippl.org/assets/js/cm-folding.js"></script>
         <script src="http://dippl.org/assets/js/cm-comments.js"></script>
-        <script src="http://webppl.org/initializeEditor.js"></script>
+        <!--<script src="http://webppl.org/initializeEditor.js"></script>-->
         <script src="http://dippl.org/assets/js/editor.js" type="text/jsx"></script>        
         <!--<script src="http://dippl.org/assets/js/webppl.min.js"></script>-->
         <script src="./demo_web/custom.js"></script>
@@ -41,89 +41,304 @@
         <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
         <![endif]-->
     </head>
-    <body>
+<body>
 
-    <div class="container">
-    <div class="header clearfix">
-    <nav>
-    <ul class="nav nav-pills pull-right">
-    <li role="presentation"><a href="http://github.com/probmods/webppl">On Github</a></li>
-    </ul>
-    </nav>
-    <h3 class="logo"><a href="/"><span class="logo-main">web</span><span class="logo-bold">ppl</span></a> <span class="logo-tagline hidden-xs">probabilistic programming for the web</span></h3>
-    </div>
+<div class="container">
+<div class="header clearfix">
+<nav>
+<ul class="nav nav-pills pull-right">
+<li role="presentation"><a href="http://github.com/lydaniel/oed_js">On Github</a></li>
+</ul>
+</nav>
+<h3 class="logo"><span class="logo-tagline hidden-xs">Optimal experiment design for WebPPL </span></h3>
+</div>
 
-    <div class="jumbotron main-lead">
-    <p class="lead">
-    webppl is a small but feature-rich probabilistic programming language embedded in Javascript.
-    </p>
-    </div>
+<h2> Optimal experiment design for WebPPL </h2>
 
-    <div class="panel panel-default">
-    <div class="panel-body editor-panel-body">
-    <div id="reactEditor">
-    </div>          
-    </div>
-    </div>
+<p> This page presents an optimal experiment design (OED) interface for <a href="https://github.com/probmods/webppl">WebPPL</a>, a Javascript-based probabilistic programming language, and illustrates its uses and applications in a series of examples.
 
-    <div class="row marketing">
-    <div class="col-lg-6">
-    <h4>Local install</h4>
-    <p>Install webppl in two easy steps:</p>
-    <ol>
-    <li>Install <a href="http://nodejs.org">nodejs</a></li>
-    <li>Run <code>npm install -g webppl</code></li>
-    </ol>
-    <p>Now, the <code>webppl</code> command is globally available.</p>
-    <p>To upgrade to the latest version, run <code class="nobreak">npm update -g webppl</code>.</p>
+<h2> Basic usage </h2>
 
-    <h4>Documentation</h4>
-    <p>The primary reference for webppl is our web book, <a href="http://dippl.org/">The Design and Implementation of Probabilistic Programming Languages</a>.</p>
+<p> This introductory example illustrates a simple use case for designing experiments to differentiate between a truncated geometric distribution and a binomial distribution. 
 
-    <p>To learn more about how to set up and use webppl, take a look at <a href="https://github.com/probmods/webppl/blob/master/README.md">the README</a> and <a href="https://github.com/probmods/webppl/tree/master/examples">the examples</a>.</p>
+<p> The basic framework of OED is divided into two components. The first task is to define the candidate models to be differentiated using experiment design. Each model needs to be defined as an argumentless function for the subsequent WebPPL inference routines. However, as the models depend on choice of experiments, we create an argument-based wrapper (<code>make_geom</code>) that takes experiment as a parameter and returns an argumentless function (<code>geom</code>).
 
-    <p>For probabilistic modeling in general, our other web book, <a href="https://probmods.org/">Probabilistic Models of Cognition</a>, might be of interest.</p>
+<p> The second task is to execute the models for a specific choice of experiment and compute the information gain using the OED interface. Executing an inference routine in WebPPL returns an Elementary Random Primitive (ERP), which is a data structure that summarizes the probability distribution of a random variables. Computing the information gain using <code>oed.get_expected_kl</code> requires an array of ERPs for each candidate model, as well as an array for the prior model belief, which describes the confidence that the corresponding candidate model is the correct one.
 
-    <h4>Contributions</h4>
-    <p>We encourage you to contribute to webppl! Check out our <a href="https://github.com/probmods/webppl/blob/master/CONTRIBUTING.md">guidelines for contributors</a>.</p>          
+<p> In the following example, we use OED to compute the information gain between a truncated geometric distribution and a binomial distribution, where the experiment is the respective success probability. We will compute the information gain for the experiment where <code>p=0.2</code>, and with a model belief of 0.4 and 0.6, for the truncated geometric distribution and binomial distribution, respectively.
 
-    </div>
+<pre><code>///fold: model parameters
+var support_size = 10;
+///
 
-    <div class="col-lg-6">
+// Define candidate models
+var make_geom = function(p) {
+  return geom = function() {
+    return flip(p) ? 0 : 1+geom()
+  }
+}
 
-    <h4>License</h4>
-    <p>The webppl code base is open source and freely available for commerical and non-commercial use under the <a href="https://github.com/probmods/webppl/blob/master/LICENSE.md">MIT license</a>.</p>
+var make_bin = function(p) {
+  return bin = function() {
+    return binomial(p, support_size);
+  }
+}
 
-    <h4>Citing</h4>
-    <p>If you use webppl in academic projects and papers, please cite as: <div class="citation">N. D. Goodman and A. Stuhlmüller (electronic). The Design and Implementation of Probabilistic Programming Languages. Retrieved <span id="date"></span> from <code>http://dippl.org</code>. <a id="toggle-bibtex" href="#">[bibtex]</a></div></p>
+// Execute models
+var expt = 0.2;
+var m1 = Enumerate(make_geom(expt), support_size)
+var m2 = Enumerate(make_bin(expt))
+print(m1)
+print(m2)
 
-    <p>
-    <pre id="bibtex">
-    @misc{dippl,
-    title = {{The Design and Implementation of Probabilistic Programming Languages}},
-    author = {Goodman, Noah D and Stuhlm\"{u}ller, Andreas},
-    year = {2014},
-    howpublished = {\url{http://dippl.org}},
-    note = {Accessed: <span class="date"></span>}
-    }
-    </pre>
-    </p>
+// Compute the information gain
+var model_belief = [0.4, 0.6]
+oed.get_expected_kl([m1, m2], model_belief)
+</code></pre>
 
-    <h4>Acknowledgments</h4>
-    <p>The webppl project is supported by grants from DARPA, under agreement number FA8750-14-2-0009, and the Office of Naval Research, grant number N00014-13-1-0788.</p>
+<p> To understand the applications of OED, we begin by analyzing the distributions of both models: these two distributions are fairly similar and a likely response does not efficiently differentiate the models. As a result, the expected information gain from this experiment is 0.09244 nats.
 
-    </div>
-    </div>
+<p> In the next example, the experiment will be changed to <code>p=0.7</code>. 
 
-    <footer class="footer">
-    <div class="container text-center">
-    <p>webppl is a <a href="http://cocolab.stanford.edu/">Stanford CoCoLab</a> project</p>
-    </div>
-    </footer>
+<pre><code>///fold: models
+var support_size = 10;
 
-    </div> <!-- /container -->
+// Define candidate models
+var make_geom = function(p) {
+  return geom = function() {
+    return flip(p) ? 0 : 1+geom()
+  }
+}
 
-    </body>
+var make_bin = function(p) {
+  return bin = function() {
+    return binomial(p, support_size);
+  }
+}
+///
+
+// Execute models
+var expt = 0.7;
+var m1 = Enumerate(make_geom(expt), support_size)
+var m2 = Enumerate(make_bin(expt))
+print(m1)
+print(m2)
+
+// Compute the information gain
+var model_belief = [0.4, 0.6]
+oed.get_expected_kl([m1, m2], model_belief)
+</code></pre>
+
+<p> This experiment is significantly better at disambiguating the models as the two distributions are separated by a large margin. The truncated geometric distribution predicts responses with low values, while the binomial distribution predicts responses with high values. Thus, it is easy to determine the underlying model from any particular response. The expected information gain is 0.6461 nats, which is higher than the first experiment, denoting that it is better at differentiating the models.
+
+<h2> Models of randomness judgements </h2>
+
+<p> This example illustrates a use case for designing a series of experiments for probabilistic models of cognition. We present two simple models that attempt understand how people judge randomness.
+
+<p> Imagine that you are asked to judge whether a sequence of coin flips came from a fair coin or a trick (weighted) coin. The sequence 'TTTTT' probably strikes you as almost certainly a trick, while the sequence 'THHTH' probably strikes you as likely coming from a fair coin. The sequence 'HHHTT' may seem more ambiguous. 
+
+<p> In this example, we will design four flip coin sequences to differentiate between two models. Rather than asking for a direct judgement of fairness, we ask for the probability that the next flip from the same coin will be heads.
+
+<p> The first model, <code>bias_coin</code>, assumes that the coin is weighted with some unknown bias, and each coin flip is independent from each other. The model internally infers the bias based on the sequence, and then uses the inferred bias to predict the next coin flip.
+
+<p> The second model, <code>markov_coin</code>,  assumes that the coin is generated by a Markov process, where each coin flip depends on the previous coin flip. The model internally infers the transition probability, and then uses the inferred transition probability, along the coin sequence, to predict the next coin flip.
+
+<p> The list of four flip coin sequences are enumerated by hand, we compute the expected information gain for each of the coin sequences.
+
+<pre><code>///fold: model parameters and helper functions
+var coin_prior     = [0.01, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 0.99];
+var coin_prior_pmf = [1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00];
+var categorical = function(v,p) {return v[discrete(p)];}
+///fold
+
+// Bias coin model
+var make_bias_coin = function(sequence) {
+  return bias_coin = function() {
+    var inferred_coin_erp = Enumerate(function() {
+      var coin_p = categorical(coin_prior, coin_prior_pmf);
+      var sequence_factor = sum(map(function(x) {
+                                      return (x == '1') ? Math.log(coin_p) : 
+                                                          Math.log(1-coin_p);}, 
+                                sequence));
+      factor(sequence_factor);
+      return coin_p;
+    });
+
+    var expected_coin_p = expectation(inferred_coin_erp);
+
+    return flip(expected_coin_p);
+  }
+}
+
+// Markov coin model
+var make_markov_coin = function(sequence) {
+  return markov_coin = function() {
+    var inferred_coin_erp = Enumerate(function() {
+      var transition_p = categorical(coin_prior, coin_prior_pmf);
+      var sequence_factor = sum(map2(function(x,y) {
+                                       return (x == y) ? Math.log(1-transition_p) : 
+                                                          Math.log(transition_p);}, 
+                                sequence.slice(0,sequence.length-1), 
+                                sequence.slice(1,sequence.length)));
+      factor(sequence_factor);
+      return transition_p;
+    });
+
+    var expected_coin_p = expectation(inferred_coin_erp, 
+                                      function(x) {return (last(sequence) == '1') ? 
+                                                          1-x : x;});
+
+    return flip(expected_coin_p);
+  }
+}
+
+var inputs = ['0000', '0001', '0010', '0011', '0100', '0101', '0110', '0111', 
+              '1000', '1001', '1010', '1011', '1100', '1101', '1110', '1111']
+var kl = map(function(x) {
+               var sequence = x;
+               var m1 = Enumerate(make_bias_coin(sequence));
+               var m2 = Enumerate(make_markov_coin(sequence));
+               return oed.get_expected_kl([m1, m2], [0.5, 0.5]);}, inputs)
+
+var data = oed.format(inputs, kl, true)
+oed_print_kl([data, "Experiment", "Information Gain"])
+</code></pre>
+
+<p> The results of the experiment design should agree with our intuitions. The most informative experiments are the symmetric pair 'HTHT' and 'THTH', since the <code>markov_coin</code> model strongly favors alternating coin flips while the <code>bias_coin</code> infers a fair weighting and does not favor either outcome. Following the same logic, the least informative experiments are the symmetric pair 'HHHH' and 'TTTT', since both models predict the same outcome. 
+
+<h2> Optimal experiment design for a given number of participants </h2>
+
+<p> This example illustrates how the optimal experiment may depend on the number of participants. We present three cognitive models of that attempt to capture how people reason in a social setting. 
+
+<p> To understand how the optimal experiment may depend on the number of participants, consider the following scenario: you are asked to distinguish between one of three models and each participant provides a yes/no response. In the first experiment, the models predict that a participant will respond yes with a probability of 0.98, 0.88, and 0.05, respectively. The the second experiment, the models predict that a participant will respond yes with a probability of 0.3, 0.5, and 0.7, respectively. If you can only ask a single participant, then it is better to run the first experiment and it will definitely differentiate between the first two and the third model. However, the responses from any additional participant provides a minimal increase in information as it is very difficult to differentiate the first and second model. Conversely, the second experiment provides far less information for a single participant, but is able to better differentiate the models with more participants.
+
+<p> For this example, we wish to consider how people reason in a social setting. Imagine that you are at the race track, looking to wager on race outcomes between a two horse race. You are able to watch a series of races and observe the horses in action before betting. However, you are also able gather information from your fellow bettors - you are able to see their wager and you know how many races they witnessed, although you cannot recover the individual outcomes of their races. How should you place your bet, given these two streams of information?
+
+<p> We will design experiments based on four parameters: the number of directly observed races, the number of directly observed wins, the number of races observed by your fellow better, and the wager of your fellow better. We ask for the probability that the horse will win the next race, measured on an eleven point scale.
+
+<p> We aim to differentiate between three models of social reasoning. The first model, <code>arrogant_reasoner</code>, only reasons about the direct observations and disregards any socially obtained data. The model determines the probability of a win by assuming a binomial distribution and inferring the model parameters.
+
+<p> The second model, <code>deferent_reasoner</code>, only reasons using the socially obtained data and disregards any direct observations. The model determines the probability of a win by using a generative model of the fellow bettor's decision making process and conditioning on the fellow better's wager.
+
+<p> The third model, <code>observant_reasoner</code>, reasons using both the directly observations as well as the socially obtained data. The model determines the probability of a win by conditioning on the direct binomial distribution as well as the fellow better's wager.
+
+<p> For illustrative purposes, we will only consider two experiments. In both experiments, there are five directly observed races, and the fellow better sees 30 races and decides to bet. The experiments differ between the number of directly observed wins, with the outcome of 0 and 1, respectively. We compute the expected information gain for the two experiments as the number of participants range from 0 to 20.
+
+<pre><code>///fold: categorical priors
+var skill_prior     = [0.01, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 0.99];
+var skill_prior_pmf = [1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00];
+
+var decision_prior     = [0.000, 10.000];
+var decision_prior_pmf = [0.250,  0.750];
+
+var categorical = function(v,p) {return v[discrete(p)];}
+///
+
+///fold: bettor's decision making model
+var get_bet_erp = function(num, win) {
+  var bet_erp = Enumerate(function() {
+    var test_skill = categorical(skill_prior, skill_prior_pmf);
+    var test_decision = categorical(decision_prior, decision_prior_pmf);
+
+    factor((binomial(test_skill, num) == win) ? 0 : -Infinity);
+
+    return flip(Math.exp(test_decision*test_skill)/
+                (Math.exp(test_decision*test_skill) + Math.exp(test_decision*(1-test_skill))));
+  });
+
+  return bet_erp;
+};
+///
+
+// Arrogant reasoner model
+var make_arrogant_reasoner_erp = function(params) {
+  var l_num = params[0]; var l_win = params[1];
+  var t_num = params[2]; var t_bet = params[3]; 
+
+  var arrogant_reasoner_erp = Enumerate(function() {
+    var test_skill = categorical(skill_prior, skill_prior_pmf);
+    factor((binomial(test_skill, l_num) == l_win) ? 0 : -Infinity);
+    return test_skill;
+  });
+  
+  return arrogant_reasoner_erp;
+};
+
+// Deferent reasoner model
+var make_deferent_reasoner_erp = function(params) {
+  var l_num = params[0]; var l_win = params[1];
+  var t_num = params[2]; var t_bet = params[3]; 
+
+  var deferent_reasoner_erp = Enumerate(function()
+  {
+    var t_bet_tf = (t_bet == 1);
+    var test_skill = categorical(skill_prior, skill_prior_pmf);
+    var t_win = binomial(test_skill, t_num);
+    var test_bet = sample(get_bet_erp(t_num, t_win));
+    factor((test_bet == t_bet_tf) ? 0 : -Infinity);
+    return test_skill;
+  });
+  
+  return deferent_reasoner_erp;
+};
+
+// Observant reasoner model
+var make_observant_reasoner_erp = function(params) {
+  var l_num = params[0]; var l_win = params[1];
+  var t_num = params[2]; var t_bet = params[3]; 
+
+  var observant_reasoner_erp = Enumerate(function() {
+    var t_bet_tf = (t_bet == 1);
+    var test_skill = categorical(skill_prior, skill_prior_pmf);
+    var t_win = binomial(test_skill, t_num);
+    var test_bet = sample(get_bet_erp(t_num, t_win))
+    factor(((binomial(test_skill, l_num) == l_win) && 
+            (test_bet == t_bet_tf)) ? 0 : -Infinity);
+    return test_skill;
+  });
+  
+  return observant_reasoner_erp;
+};
+
+// List of experiment parameters and number of participants
+var data = oed.make_data("npart", "");
+var expt_list = [[5,0,30,1], [5,1,30,1]];
+var npart = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
+
+map(function(expt){
+      var params = expt;
+      var m1 = make_observant_reasoner_erp(params);
+      var m2 = make_arrogant_reasoner_erp(params);
+      var m3 = make_deferent_reasoner_erp(params);
+
+      map(function(n) {
+          data.concat(oed.format([params], 
+                                 [oed.get_expected_kl_participants_sample([m1,m2,m3], 
+                                                                          [1/3,1/3,1/3], 
+                                                                          n, 5000)],
+                                 false, n))}, npart);
+    }, expt_list)
+
+oed_print_kl_participants([data, "Number of participants", "Information Gain"])
+</code></pre>
+
+<p> The optimal experiment depends on the number of participants, with the transition occuring around the fourth participant. The first experiment provides the most conflict between the direct and social observations. As a result, the <code>arrogant_reasoner</code> and <code>observant_reasoner</code> have very similar response distributions, while the <code>deferent_reasoner</code> predicts a different distribution (modify the code and take a look at the distributions for yourself!). For a small number of participants, the first experiment easily distinguishes between the similar models and the third model, but is inefficient at differentiating between the similar models with additional participants. The second experiment produces more unique distributions at the cost of greater overlap, which makes it difficult to differentiate the models with fewer participants, but is more efficient with additional participants.
+
+<h4>Acknowledgments</h4>
+<p>The webppl project is supported by grants from DARPA, under agreement number FA8750-14-2-0009, and the Office of Naval Research, grant number N00014-13-1-0788.</p>
+
+</div>
+</div>
+
+<footer class="footer">
+<div class="container text-center">
+<p>webppl is a <a href="http://cocolab.stanford.edu/">Stanford CoCoLab</a> project</p>
+</div>
+</footer>
+
+</div> <!-- /container -->
+
+</body>
 </html>
 
 
