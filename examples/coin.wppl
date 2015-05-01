@@ -1,55 +1,56 @@
-var make_iid_coin = function(sequence, learn_particles) 
-{
-    return iid_coin = function() 
-    {
-        var inferred_coin_erp = ParticleFilter(function()
-            {
-                var coin_p = sample(uniformERP, [0,1]);
-                var sequence_factor = sum(map(function(x) 
-                                                  {return (x == '1') ? Math.log(coin_p) : 
-                                                                       Math.log(1-coin_p);}, sequence));
-                factor(sequence_factor);
-                return coin_p;
-            }, learn_particles);
+// Model parameters and helper functions
+var coin_prior     = [0.01, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 0.99];
+var coin_prior_pmf = [1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00];
+var categorical = function(v,p) {return v[discrete(p)];}
 
-        var expected_coin_p = expectation(inferred_coin_erp);
+// Bias coin model
+var make_bias_coin = function(sequence) {
+  return bias_coin = function() {
+    var inferred_coin_erp = Enumerate(function() {
+      var coin_p = categorical(coin_prior, coin_prior_pmf);
+      var sequence_factor = sum(map(function(x) {
+                                      return (x == '1') ? Math.log(coin_p) : 
+                                                          Math.log(1-coin_p);}, 
+                                sequence));
+      factor(sequence_factor);
+      return coin_p;
+    });
 
-        return flip(expected_coin_p);
-    }
+    var expected_coin_p = expectation(inferred_coin_erp);
+
+    return flip(expected_coin_p);
+  }
 }
 
-var make_markov_coin = function(sequence, learn_particles) 
-{
-    return markov_coin = function() 
-    {
-        var inferred_coin_erp = ParticleFilter(function()
-            {
-                var transition_p = sample(uniformERP, [0,1]);
-                var sequence_factor = sum(map2(function(x,y) 
-                                                  {//console.log(x, y, transition_p);
-                                                  (x == y) ? Math.log(1-transition_p) : 
-                                                                    Math.log(transition_p);}, 
-                                              sequence.slice(0,sequence.length-1), 
-                                              sequence.slice(1,sequence.length)));
-                factor(sequence_factor);
-                return transition_p;
-            }, learn_particles);
+// Markov coin model
+var make_markov_coin = function(sequence) {
+  return markov_coin = function() {
+    var inferred_coin_erp = Enumerate(function() {
+      var transition_p = categorical(coin_prior, coin_prior_pmf);
+      var sequence_factor = sum(map2(function(x,y) {
+                                       return (x == y) ? Math.log(1-transition_p) : 
+                                                          Math.log(transition_p);}, 
+                                sequence.slice(0,sequence.length-1), 
+                                sequence.slice(1,sequence.length)));
+      factor(sequence_factor);
+      return transition_p;
+    });
 
-        var expected_coin_p = expectation(inferred_coin_erp, 
-                                          function(x) {return (last(sequence) == '1') ? 1-x : x;});
+    var expected_coin_p = expectation(inferred_coin_erp, 
+                                      function(x) {return (last(sequence) == '1') ? 
+                                                          1-x : x;});
 
-        return flip(expected_coin_p);
-    }
+    return flip(expected_coin_p);
+  }
 }
 
 var inputs = ['0000', '0001', '0010', '0011', '0100', '0101', '0110', '0111', 
               '1000', '1001', '1010', '1011', '1100', '1101', '1110', '1111']
 var kl = map(function(x) {
-                 var sequence = x;
-                 var particles = 5000;
-                 var m1 = Enumerate(make_iid_coin(sequence, particles));
-                 var m2 = Enumerate(make_markov_coin(sequence, particles));
-                 return oed.get_expected_kl([m1, m2], [0.5, 0.5]);}, inputs)
+               var sequence = x;
+               var m1 = Enumerate(make_bias_coin(sequence));
+               var m2 = Enumerate(make_markov_coin(sequence));
+               return oed.get_expected_kl([m1, m2], [0.5, 0.5]);}, inputs)
 
 var data = oed.format(inputs, kl, true)
 oed.log(data)

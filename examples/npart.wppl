@@ -1,3 +1,4 @@
+// Categorical priors
 var skill_prior     = [0.01, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 0.99];
 var skill_prior_pmf = [1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00];
 
@@ -6,97 +7,89 @@ var decision_prior_pmf = [0.250,  0.750];
 
 var categorical = function(v,p) {return v[discrete(p)];}
 
-var get_bet_erp = function(num, win)
-{
-    var bet_erp = Enumerate(function()
-    {
-        var test_skill = categorical(skill_prior, skill_prior_pmf);
-        var test_decision = categorical(decision_prior, decision_prior_pmf);
+// Bettor's decision making model
+var get_bet_erp = function(num, win) {
+  var bet_erp = Enumerate(function() {
+    var test_skill = categorical(skill_prior, skill_prior_pmf);
+    var test_decision = categorical(decision_prior, decision_prior_pmf);
 
-        factor((binomial(test_skill, num) == win) ? 0 : -Infinity);
+    factor((binomial(test_skill, num) == win) ? 0 : -Infinity);
 
-        return flip(Math.exp(test_decision*test_skill)/
-                    (Math.exp(test_decision*test_skill) + Math.exp(test_decision*(1-test_skill))));
-    });
+    return flip(Math.exp(test_decision*test_skill)/
+                (Math.exp(test_decision*test_skill) + Math.exp(test_decision*(1-test_skill))));
+  });
 
-    return bet_erp;
+  return bet_erp;
 };
 
-var make_observant_learner_erp = function(params) 
-{
-    var t_num = params[0];
-    var t_bet = params[1];
-    var l_num = params[2];
-    var l_win = params[3];
+// Arrogant reasoner model
+var make_arrogant_reasoner_erp = function(params) {
+  var l_num = params[0]; var l_win = params[1];
+  var t_num = params[2]; var t_bet = params[3]; 
 
-    var observant_learner_erp = Enumerate(function()
-    {
-        var t_bet_tf = (t_bet == 1);
-        var test_skill = categorical(skill_prior, skill_prior_pmf);
-        var t_win = binomial(test_skill, t_num);
-        var test_bet = sample(get_bet_erp(t_num, t_win))
-        factor(((binomial(test_skill, l_num) == l_win) && 
-                (test_bet == t_bet_tf)) ? 0 : -Infinity);
-        return test_skill;
-    });
-    
-    return observant_learner_erp;
+  var arrogant_reasoner_erp = Enumerate(function() {
+    var test_skill = categorical(skill_prior, skill_prior_pmf);
+    factor((binomial(test_skill, l_num) == l_win) ? 0 : -Infinity);
+    return test_skill;
+  });
+  
+  return arrogant_reasoner_erp;
 };
 
-var make_arrogant_learner_erp = function(params) 
-{
-    var t_num = params[0];
-    var t_bet = params[1];
-    var l_num = params[2];
-    var l_win = params[3];
+// Deferent reasoner model
+var make_deferent_reasoner_erp = function(params) {
+  var l_num = params[0]; var l_win = params[1];
+  var t_num = params[2]; var t_bet = params[3]; 
 
-    var arrogant_learner_erp = Enumerate(function()
-    {
-        var test_skill = categorical(skill_prior, skill_prior_pmf);
-        factor((binomial(test_skill, l_num) == l_win) ? 0 : -Infinity);
-        return test_skill;
-    });
-    
-    return arrogant_learner_erp;
+  var deferent_reasoner_erp = Enumerate(function()
+  {
+    var t_bet_tf = (t_bet == 1);
+    var test_skill = categorical(skill_prior, skill_prior_pmf);
+    var t_win = binomial(test_skill, t_num);
+    var test_bet = sample(get_bet_erp(t_num, t_win));
+    factor((test_bet == t_bet_tf) ? 0 : -Infinity);
+    return test_skill;
+  });
+  
+  return deferent_reasoner_erp;
 };
 
-var make_deferrent_learner_erp = function(params) 
-{
-    var t_num = params[0];
-    var t_bet = params[1];
-    var l_num = params[2];
-    var l_win = params[3];
+// Observant reasoner model
+var make_observant_reasoner_erp = function(params) {
+  var l_num = params[0]; var l_win = params[1];
+  var t_num = params[2]; var t_bet = params[3]; 
 
-    var deferrent_learner_erp = Enumerate(function()
-    {
-        var t_bet_tf = (t_bet == 1);
-        var test_skill = categorical(skill_prior, skill_prior_pmf);
-        var t_win = binomial(test_skill, t_num);
-        var test_bet = sample(get_bet_erp(t_num, t_win));
-        factor((test_bet == t_bet_tf) ? 0 : -Infinity);
-        return test_skill;
-    });
-    
-    return deferrent_learner_erp;
+  var observant_reasoner_erp = Enumerate(function() {
+    var t_bet_tf = (t_bet == 1);
+    var test_skill = categorical(skill_prior, skill_prior_pmf);
+    var t_win = binomial(test_skill, t_num);
+    var test_bet = sample(get_bet_erp(t_num, t_win))
+    factor(((binomial(test_skill, l_num) == l_win) && 
+            (test_bet == t_bet_tf)) ? 0 : -Infinity);
+    return test_skill;
+  });
+  
+  return observant_reasoner_erp;
 };
 
+// List of experiment parameters and number of participants
 var data = oed.make_data("npart", "");
-var expt_list = [[30,1,5,0], [30,1,5,1]];
+var expt_list = [[5,0,30,1], [5,1,30,1]];
 var npart = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
 
 map(function(expt){
-        var params = expt;
-        var m1 = make_observant_learner_erp(params);
-        var m2 = make_arrogant_learner_erp(params);
-        var m3 = make_deferrent_learner_erp(params);
+      var params = expt;
+      var m1 = make_observant_reasoner_erp(params);
+      var m2 = make_arrogant_reasoner_erp(params);
+      var m3 = make_deferent_reasoner_erp(params);
 
-        map(function(n) {
-            data.concat(oed.format([params], 
-                                   [oed.get_expected_kl_participants_sample([m1, m2, m3], [1/3, 1/3, 1/3], n, 5000)],
-                                   false, n))}, npart);
+      map(function(n) {
+          data.concat(oed.format([params], 
+                                 [oed.get_expected_kl_participants_sample([m1,m2,m3], 
+                                                                          [1/3,1/3,1/3], 
+                                                                          n, 5000)],
+                                 false, n))}, npart);
     }, expt_list)
 
-//console.log(data)
-oed_print_kl_participants([data, "Number of participants", "Information Gain"])
-
-
+console.log(data)
+//oed_print_kl_participants([data, "Number of participants", "Information Gain"])
