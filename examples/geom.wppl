@@ -16,10 +16,9 @@ var make_bin = function(p) {
 
 // Execute models
 var expt = 0.2;
-var m1 = Enumerate(make_geom(expt), support_size)
+var m1 = Enumerate(make_geom(expt), support_size+1)
 var m2 = Enumerate(make_bin(expt))
-print(m1)
-print(m2)
+//oed_print_erps([m1, m2])
 
 // Compute the information gain
 var model_belief = [0.4, 0.6]

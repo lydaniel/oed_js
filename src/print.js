@@ -1,15 +1,15 @@
 'use strict';
 
-var datum = function(expt, optc, nprt) 
+var datum = function(expt, optc, nprt, erps) 
 {
     this.expt = expt;  
     this.optc = optc;
     this.nprt = (nprt == undefined) ? 1 : nprt;
+    this.erps = erps;
 };
 
-var data = function(tag, value) 
+var data = function() 
 {
-    this.id = {tag: tag, value: value};
     this.data = [];
 
     this.to_expt_list = function()
@@ -36,6 +36,14 @@ var data = function(tag, value)
         return nprt_list;
     }
 
+    this.to_erps_list = function()
+    {
+        var erps_list = [];
+        for (var i = 0; i < this.data.length; i++) 
+            erps_list[i]  = this.data[i].erps;
+        return erps_list;
+    }
+
     this.concat = function(new_data)
     {
         for (var i = 0; i < new_data.data.length; i++) 
@@ -43,20 +51,20 @@ var data = function(tag, value)
     }
 };
 
-var make_data = function(tag, value) 
+var make_data = function() 
 {
-    return new data(tag, value);
+    return new data();
 };
 
-var format = function(inputs, kl, sort, nprt) 
+var format = function(inputs, kl, sort, nprt, erps) 
 {
-    var list = new data("single", "");
+    var list = new data();
     //console.log(inputs, kl, sort, nprt)
     nprt = (nprt == undefined) ? 1 : nprt;
     for (var i = 0; i < inputs.length; i++)
     {
         var temp_input = (typeof inputs[i] == 'string') ? inputs[i] : JSON.stringify(inputs[i]);
-        list.data.push(new datum(temp_input, kl[i], nprt));
+        list.data.push(new datum(temp_input, kl[i], nprt, erps[i]));
     }
 
     if (sort == true)
