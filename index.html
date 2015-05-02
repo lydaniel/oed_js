@@ -1,46 +1,46 @@
 
 <!DOCTYPE html>
 <html lang="en">
-    <head>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>optimal experiment design for webppl</title>
 
-        <title>optimal experiment design for webppl</title>
+    <link rel="stylesheet" href="http://webppl.org/bower_components/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="http://webppl.org/bower_components/bootstrap/dist/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="http://dippl.org/node_modules/codemirror/lib/codemirror.css">
+    <link rel="stylesheet" href="http://dippl.org/node_modules/codemirror/theme/neat.css">
+    <!--<link rel="stylesheet" href="http://dippl.org/assets/css/code.css"> -->
+    <link rel="stylesheet" href="./demo_web/code.css">
+    <link rel="stylesheet" href="http://webppl.org/webppl.css">
 
-        <link rel="stylesheet" href="http://webppl.org/bower_components/bootstrap/dist/css/bootstrap.min.css">
-        <link rel="stylesheet" href="http://webppl.org/bower_components/bootstrap/dist/css/bootstrap-theme.min.css">
-        <link rel="stylesheet" href="http://dippl.org/node_modules/codemirror/lib/codemirror.css">
-        <link rel="stylesheet" href="http://dippl.org/node_modules/codemirror/theme/neat.css">
-        <link rel="stylesheet" href="http://dippl.org/assets/css/code.css">        
-        <link rel="stylesheet" href="http://webppl.org/webppl.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+    <script src="http://dippl.org/bower_components/jquery-autosize/jquery.autosize.min.js"></script>      
+    <script src="http://dippl.org/bower_components/react/JSXTransformer.js"></script>
+    <script src="http://dippl.org/bower_components/react/react-with-addons.min.js"></script>
+    <script src="http://dippl.org/bower_components/showdown/compressed/showdown.js"></script>
+    <script src="http://dippl.org/node_modules/codemirror/lib/codemirror.js"></script>
+    <script src="http://dippl.org/bower_components/d3/d3.min.js"></script>
+    <script src="http://dippl.org/bower_components/dimple/dist/dimple.v2.1.0.js"></script>
+    <script src="http://dippl.org/bower_components/underscore/underscore.js"></script>    
+    <script src="http://dippl.org/node_modules/codemirror/mode/javascript/javascript.js"></script>
+    <script src="http://dippl.org/assets/js/cm-folding.js"></script>
+    <script src="http://dippl.org/assets/js/cm-comments.js"></script>
+    <!--<script src="http://webppl.org/initializeEditor.js"></script>-->
+    <script src="http://dippl.org/assets/js/editor.js" type="text/jsx"></script>        
+    <!--<script src="http://dippl.org/assets/js/webppl.min.js"></script>-->
+    <script src="./demo_web/custom.js"></script>
+    <script src="./demo_web/webppl.js"></script> 
 
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
-        <script src="http://dippl.org/bower_components/jquery-autosize/jquery.autosize.min.js"></script>      
-        <script src="http://dippl.org/bower_components/react/JSXTransformer.js"></script>
-        <script src="http://dippl.org/bower_components/react/react-with-addons.min.js"></script>
-        <script src="http://dippl.org/bower_components/showdown/compressed/showdown.js"></script>
-        <script src="http://dippl.org/node_modules/codemirror/lib/codemirror.js"></script>
-        <script src="http://dippl.org/bower_components/d3/d3.min.js"></script>
-        <script src="http://dippl.org/bower_components/dimple/dist/dimple.v2.1.0.js"></script>
-        <script src="http://dippl.org/bower_components/underscore/underscore.js"></script>    
-        <script src="http://dippl.org/node_modules/codemirror/mode/javascript/javascript.js"></script>
-        <script src="http://dippl.org/assets/js/cm-folding.js"></script>
-        <script src="http://dippl.org/assets/js/cm-comments.js"></script>
-        <!--<script src="http://webppl.org/initializeEditor.js"></script>-->
-        <script src="http://dippl.org/assets/js/editor.js" type="text/jsx"></script>        
-        <!--<script src="http://dippl.org/assets/js/webppl.min.js"></script>-->
-        <script src="./demo_web/custom.js"></script>
-        <script src="./demo_web/webppl.js"></script> 
-
-        <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
-        <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-        <!--[if lt IE 9]>
-        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
-        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-        <![endif]-->
-    </head>
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
 <body>
 
 <div class="container">
@@ -86,17 +86,16 @@ var make_bin = function(p) {
 
 // Execute models
 var expt = 0.2;
-var m1 = Enumerate(make_geom(expt), support_size)
+var m1 = Enumerate(make_geom(expt), support_size+1)
 var m2 = Enumerate(make_bin(expt))
-print(m1)
-print(m2)
+oed_print_erps([m1, m2])
 
 // Compute the information gain
 var model_belief = [0.4, 0.6]
 oed.get_expected_kl([m1, m2], model_belief)
 </code></pre>
 
-<p> To understand the applications of OED, we begin by analyzing the distributions of both models: these two distributions are fairly similar and a likely response does not efficiently differentiate the models. As a result, the expected information gain from this experiment is 0.09244 nats.
+<p> To understand the applications of OED, we begin by analyzing the distributions of both models: these two distributions are fairly similar and a likely response does not efficiently differentiate the models. As a result, the expected information gain from this experiment is 0.1001 nats.
 
 <p> In the next example, the experiment will be changed to <code>p=0.7</code>. 
 
@@ -119,10 +118,9 @@ var make_bin = function(p) {
 
 // Execute models
 var expt = 0.7;
-var m1 = Enumerate(make_geom(expt), support_size)
+var m1 = Enumerate(make_geom(expt), support_size+1)
 var m2 = Enumerate(make_bin(expt))
-print(m1)
-print(m2)
+oed_print_erps([m1, m2])
 
 // Compute the information gain
 var model_belief = [0.4, 0.6]
@@ -192,27 +190,29 @@ var make_markov_coin = function(sequence) {
   }
 }
 
-var inputs = ['0000', '0001', '0010', '0011', '0100', '0101', '0110', '0111', 
-              '1000', '1001', '1010', '1011', '1100', '1101', '1110', '1111']
-var kl = map(function(x) {
-               var sequence = x;
-               var m1 = Enumerate(make_bias_coin(sequence));
-               var m2 = Enumerate(make_markov_coin(sequence));
-               return oed.get_expected_kl([m1, m2], [0.5, 0.5]);}, inputs)
+// Execute the models and compute the information gain
+var expt_list= ['0000', '0001', '0010', '0011', '0100', '0101', '0110', '0111', 
+                '1000', '1001', '1010', '1011', '1100', '1101', '1110', '1111']
+var results = map(function(expt) {
+                    var m1 = Enumerate(make_bias_coin(expt));
+                    var m2 = Enumerate(make_markov_coin(expt));
+                    return [oed.get_expected_kl([m1, m2], [0.5, 0.5]), [m1,m2]];}, expt_list)
+var kl = map(first, results);
+var erps = map(second, results);
 
-var data = oed.format(inputs, kl, true)
-oed_print_kl([data, "Experiment", "Information Gain"])
+var data = oed.format(expt_list, kl, true, 1, erps);
+oed_print_kl([data, "Information Gain", "Experiment"])
 </code></pre>
 
 <p> The results of the experiment design should agree with our intuitions. The most informative experiments are the symmetric pair 'HTHT' and 'THTH', since the <code>markov_coin</code> model strongly favors alternating coin flips while the <code>bias_coin</code> infers a fair weighting and does not favor either outcome. Following the same logic, the least informative experiments are the symmetric pair 'HHHH' and 'TTTT', since both models predict the same outcome. 
 
-<h2> Optimal experiment design for a given number of participants </h2>
+<p> Try clicking on the bars in the plot to see the response distributions of the corresponding experiments. This will allow us to easily get a deeper understanding of why specific experiments vary in their ability to differentiate the models.
 
-<p> This example illustrates how the optimal experiment may depend on the number of participants. We present three cognitive models of that attempt to capture how people reason in a social setting. 
+<h2> Social reasoning and enumeration of experiment spaces</h2>
 
-<p> To understand how the optimal experiment may depend on the number of participants, consider the following scenario: you are asked to distinguish between one of three models and each participant provides a yes/no response. In the first experiment, the models predict that a participant will respond yes with a probability of 0.98, 0.88, and 0.05, respectively. The the second experiment, the models predict that a participant will respond yes with a probability of 0.3, 0.5, and 0.7, respectively. If you can only ask a single participant, then it is better to run the first experiment and it will definitely differentiate between the first two and the third model. However, the responses from any additional participant provides a minimal increase in information as it is very difficult to differentiate the first and second model. Conversely, the second experiment provides far less information for a single participant, but is able to better differentiate the models with more participants.
+<p> This example illustrates how experiment spaces can be easily enumerated for exploring and understanding the behavior of candidate models. We present three cognitive models that attempt to capture how people reason in a social setting. 
 
-<p> For this example, we wish to consider how people reason in a social setting. Imagine that you are at the race track, looking to wager on race outcomes between a two horse race. You are able to watch a series of races and observe the horses in action before betting. However, you are also able gather information from your fellow bettors - you are able to see their wager and you know how many races they witnessed, although you cannot recover the individual outcomes of their races. How should you place your bet, given these two streams of information?
+<p> Imagine that you are at the race track, looking to wager on race outcomes between a two horse race. You are able to watch a series of races and observe the horses in action before betting. However, you are also able gather information from your fellow bettors - you are able to see their wager and you know how many races they witnessed, although you cannot recover the individual outcomes of their races. How should you place your bet, given these two streams of information?
 
 <p> We will design experiments based on four parameters: the number of directly observed races, the number of directly observed wins, the number of races observed by your fellow better, and the wager of your fellow better. We ask for the probability that the horse will win the next race, measured on an eleven point scale.
 
@@ -220,9 +220,9 @@ oed_print_kl([data, "Experiment", "Information Gain"])
 
 <p> The second model, <code>deferent_reasoner</code>, only reasons using the socially obtained data and disregards any direct observations. The model determines the probability of a win by using a generative model of the fellow bettor's decision making process and conditioning on the fellow better's wager.
 
-<p> The third model, <code>observant_reasoner</code>, reasons using both the directly observations as well as the socially obtained data. The model determines the probability of a win by conditioning on the direct binomial distribution as well as the fellow better's wager.
+<p> The third model, <code>observant_reasoner</code>, reasons using both the directly observations as well as the socially obtained data. The model determines the probability of a win by conditioning on the direct binomial distribution as well as the fellow better's wager, while attributing qualities such as reliability to the fellow better.
 
-<p> For illustrative purposes, we will only consider two experiments. In both experiments, there are five directly observed races, and the fellow better sees 30 races and decides to bet. The experiments differ between the number of directly observed wins, with the outcome of 0 and 1, respectively. We compute the expected information gain for the two experiments as the number of participants range from 0 to 20.
+<p> In this example, we will consider the experiment space where the number of directly observed races is 5, the number of directly observed wins ranges from 0 to 5, the number of races observed by the fellow better is selected from the set {2, 5, 10, 30}, and the fellow better always wagers on a win. We create an array for each of the four parameters and then use <code>oed.product</code> to compute the Cartesian product of these sets. This function, and other combinatoric functions such as <code>oed.permutations</code> and <code>oed.combinations</code> allows us to enumerate over the space of experiments easily.
 
 <pre><code>///fold: categorical priors
 var skill_prior     = [0.01, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 0.99];
@@ -300,29 +300,146 @@ var make_observant_reasoner_erp = function(params) {
   return observant_reasoner_erp;
 };
 
+// List of experiment parameters 
+var l_direct_obs = [5];
+var l_direct_win = [0,1,2,3,4,5];
+var l_social_obs = [2,5,10,30];
+var l_social_bet = [1];
+
+var expt_list = oed.list_product([l_direct_obs, l_direct_win, 
+                                  l_social_obs, l_social_bet]);
+
+// Execute the models and compute the information gain
+var results = map(function(expt) {
+                    var m1 = make_arrogant_reasoner_erp(expt);
+                    var m2 = make_deferent_reasoner_erp(expt);
+                    var m3 = make_observant_reasoner_erp(expt);
+                    return [oed.get_expected_kl([m1,m2,m3], [1/3,1/3,1/3]), 
+                            [m1,m2,m3]];}, expt_list)
+var kl = map(first, results);
+var erps = map(second, results);
+
+var data = oed.format(expt_list, kl, true, 1, erps)
+oed_print_kl([data, "Information Gain", "Experiment"])
+</code></pre>
+
+<p> By enumerating over the experiments, we can analyze the effect of each parameter on its ability to differentiate the candidate models. If we click on the optimal experiment, <code>[5,0,30,1]</code>, we can see that it is able to strongly differentiate between the set of arrogant and observant reasoners and the deferent reasoner. This result is intuitive as it introduces the greatest conflict between the two streams of information: the direct observations suggest that the win percentage is low, yet the fellow bettor's behavior suggests that the win percentage is high. As a result, the arrogant reasoner would likely wager on the win, while the deferent reasoner would likely wager on a loss. The observant reasoner would reason that the most likely explaination for this conflict of information is that the fellow better is unreliable and would also likely wager on the win, although with less confidence than the arrogant reasoner. 
+
+<p> By analyzing the distributions of each experiment, we can begin to develop a deeper understanding of these models and answer more complex questions such as: is the information gain more sensitive to the number of directly observed wins or the number of races observed by the fellow bettor, how does the number of races observed by the fellow better affect the ability to discriminate candidate models, or why is directly observing four wins less informative than observing five wins? Try clicking on the experiments to see if you can figure it out.
+
+<h2> Optimal experiment design for a given number of participants </h2>
+
+<p> This example illustrates how the optimal experiment may depend on the number of participants, and it is based on the three social reasoning cognitive models introduced in the previous example. 
+
+<p> To understand how the optimal experiment may depend on the number of participants, consider the following scenario: you are asked to distinguish between one of three models and each participant provides a yes/no response. In the first experiment, the models predict that a participant will respond yes with a probability of 0.98, 0.88, and 0.05, respectively. In the second experiment, the models predict that a participant will respond yes with a probability of 0.3, 0.5, and 0.7, respectively. If you can only ask a single participant, then it is better to run the first experiment and it will definitely differentiate between the first two and the third model. However, the responses from any additional participant provides a minimal increase in information as it is very difficult to differentiate between the first and second model. Conversely, the second experiment provides far less information for a single participant, but is able to better differentiate the models with more participants.
+
+<p> From the previous experiment, we saw that the optimal experiment for a single participant was the condition where there are zero directly observed wins out of five races, and the fellow better sees 30 races and decides to bet. However, is it the still most informative experiment if we are able to survey more than one participant?
+
+<p> For illustrative purposes, we will only consider two experiments. In both experiments, there are five directly observed races, and the fellow better sees 30 races and decides to bet. The experiments differ between the number of directly observed wins, with the outcome of 0 and 1, respectively. We compute the expected information gain for the two experiments as the number of participants range from 0 to 20.
+
+<pre><code>///fold: categorical priors
+var skill_prior     = [0.01, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 0.99];
+var skill_prior_pmf = [1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00];
+
+var decision_prior     = [0.000, 10.000];
+var decision_prior_pmf = [0.250,  0.750];
+
+var categorical = function(v,p) {return v[discrete(p)];}
+///
+
+///fold: bettor's decision making model
+var get_bet_erp = function(num, win) {
+  var bet_erp = Enumerate(function() {
+    var test_skill = categorical(skill_prior, skill_prior_pmf);
+    var test_decision = categorical(decision_prior, decision_prior_pmf);
+
+    factor((binomial(test_skill, num) == win) ? 0 : -Infinity);
+
+    return flip(Math.exp(test_decision*test_skill)/
+                (Math.exp(test_decision*test_skill) + Math.exp(test_decision*(1-test_skill))));
+  });
+
+  return bet_erp;
+};
+///
+
+///fold: models
+// Arrogant reasoner model
+var make_arrogant_reasoner_erp = function(params) {
+  var l_num = params[0]; var l_win = params[1];
+  var t_num = params[2]; var t_bet = params[3]; 
+
+  var arrogant_reasoner_erp = Enumerate(function() {
+    var test_skill = categorical(skill_prior, skill_prior_pmf);
+    factor((binomial(test_skill, l_num) == l_win) ? 0 : -Infinity);
+    return test_skill;
+  });
+  
+  return arrogant_reasoner_erp;
+};
+
+// Deferent reasoner model
+var make_deferent_reasoner_erp = function(params) {
+  var l_num = params[0]; var l_win = params[1];
+  var t_num = params[2]; var t_bet = params[3]; 
+
+  var deferent_reasoner_erp = Enumerate(function()
+  {
+    var t_bet_tf = (t_bet == 1);
+    var test_skill = categorical(skill_prior, skill_prior_pmf);
+    var t_win = binomial(test_skill, t_num);
+    var test_bet = sample(get_bet_erp(t_num, t_win));
+    factor((test_bet == t_bet_tf) ? 0 : -Infinity);
+    return test_skill;
+  });
+  
+  return deferent_reasoner_erp;
+};
+
+// Observant reasoner model
+var make_observant_reasoner_erp = function(params) {
+  var l_num = params[0]; var l_win = params[1];
+  var t_num = params[2]; var t_bet = params[3]; 
+
+  var observant_reasoner_erp = Enumerate(function() {
+    var t_bet_tf = (t_bet == 1);
+    var test_skill = categorical(skill_prior, skill_prior_pmf);
+    var t_win = binomial(test_skill, t_num);
+    var test_bet = sample(get_bet_erp(t_num, t_win))
+    factor(((binomial(test_skill, l_num) == l_win) && 
+            (test_bet == t_bet_tf)) ? 0 : -Infinity);
+    return test_skill;
+  });
+  
+  return observant_reasoner_erp;
+};
+///
+
 // List of experiment parameters and number of participants
-var data = oed.make_data("npart", "");
 var expt_list = [[5,0,30,1], [5,1,30,1]];
 var npart = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
 
+// Execute the models and compute the information gain
+var data = oed.make_data();
 map(function(expt){
-      var params = expt;
-      var m1 = make_observant_reasoner_erp(params);
-      var m2 = make_arrogant_reasoner_erp(params);
-      var m3 = make_deferent_reasoner_erp(params);
+      var m1 = make_arrogant_reasoner_erp(expt);
+      var m2 = make_deferent_reasoner_erp(expt);
+      var m3 = make_observant_reasoner_erp(expt);
 
       map(function(n) {
-          data.concat(oed.format([params], 
+          data.concat(oed.format([expt], 
                                  [oed.get_expected_kl_participants_sample([m1,m2,m3], 
                                                                           [1/3,1/3,1/3], 
                                                                           n, 5000)],
-                                 false, n))}, npart);
+                                 false, n, [[m1,m2,m3]]))}, npart);
     }, expt_list)
 
 oed_print_kl_participants([data, "Number of participants", "Information Gain"])
 </code></pre>
 
-<p> The optimal experiment depends on the number of participants, with the transition occuring around the fourth participant. The first experiment provides the most conflict between the direct and social observations. As a result, the <code>arrogant_reasoner</code> and <code>observant_reasoner</code> have very similar response distributions, while the <code>deferent_reasoner</code> predicts a different distribution (modify the code and take a look at the distributions for yourself!). For a small number of participants, the first experiment easily distinguishes between the similar models and the third model, but is inefficient at differentiating between the similar models with additional participants. The second experiment produces more unique distributions at the cost of greater overlap, which makes it difficult to differentiate the models with fewer participants, but is more efficient with additional participants.
+<p> The optimal experiment depends on the number of participants, with the transition occuring around the fourth participant. The first experiment, <code>[5,0,30,1]</code>, provides the most conflict between the direct and social observations, and from the analysis in the previous example, we know that it is easy to differentiate pair of arrogant and observant reasoners from the deferent reasoner, especially for a small number of participants. However, this experiment is inefficient at differentiating between the arrogant and observant reasoners with additional participants, as these two distributions are very similar. 
+
+<p> By clicking on the second experiment, <code>[5,0,30,1]</code>, we can determine that it produces more unique distributions at the cost of greater overlap across the joint set. This property makes it difficult to differentiate the models with fewer participants, but is more efficient with additional participants.
 
 <h4>Acknowledgments</h4>
 <p>The webppl project is supported by grants from DARPA, under agreement number FA8750-14-2-0009, and the Office of Naval Research, grant number N00014-13-1-0788.</p>

@@ -58,6 +58,16 @@ function print(store, k, a, x){
   return k(store);
 }
 
+function oed_print_erps(store, k, a, x){
+  var resultDiv = $(activeCodeBox.parent().find(".resultDiv"));
+  resultDiv.show();
+  for (var i = 0; i < x.length; i++) {
+    resultDiv.append(document.createTextNode("Model " + i + " distribution: \n"));
+    distribution_chart(resultDiv, x[i]); 
+  }
+  return k(store);
+}
+
 function oed_print_kl(store, k, a, x){
     var resultDiv = $(activeCodeBox.parent().find(".resultDiv"));
     resultDiv.show();
@@ -65,8 +75,7 @@ function oed_print_kl(store, k, a, x){
     var data = x[0];
     var xlabel = (x[1] == undefined) ? null : x[1];
     var ylabel = (x[2] == undefined) ? null : x[2];
-    bar_chart(resultDivSelector, data.to_expt_list(), data.to_optc_list(), 
-              xlabel, ylabel);
+    bar_chart(resultDivSelector, data, xlabel, ylabel);
     return k(store);
 }
 
@@ -77,8 +86,7 @@ function oed_print_kl_participants(store, k, a, x){
     var data = x[0];
     var xlabel = (x[1] == undefined) ? null : x[1];
     var ylabel = (x[2] == undefined) ? null : x[2];
-    line_chart(resultDivSelector, data.to_expt_list(), data.to_nprt_list(), 
-               data.to_optc_list(), xlabel, ylabel);
+    line_chart(resultDivSelector, data, xlabel, ylabel);
     return k(store);
 }
 
@@ -88,7 +96,7 @@ function barChart(containerSelector, labels, counts){
   $(containerSelector).show();
   var svg = d3.select(containerSelector)
     .append("svg")
-    .attr("class", "barChart");
+    .attr("class", "chart");
   var data = [];
   for (var i=0; i<labels.length; i++){
     if (counts[i] > 0) {
@@ -109,46 +117,147 @@ function barChart(containerSelector, labels, counts){
   chart.draw();
 }
 
-// Line plots
+function sortAlphaNum(a,b) {
+  var reA = /[^a-zA-Z]/g;
+  var reN = /[^0-9.]/g;
+  var aA = a.replace(reA, "");
+  var bA = b.replace(reA, "");
+  if(aA === bA) {
+    var aN = parseFloat(a.replace(reN, ""), 10);
+    var bN = parseFloat(b.replace(reN, ""), 10);
+    return aN === bN ? 0 : aN > bN ? 1 : -1;
+  } else {
+    return aA > bA ? 1 : -1;
+  }
+}
 
-function bar_chart(containerSelector, expt, optc, xlabel, ylabel){
+// OED plots
+function dist_chart(containerSelector, labels, counts){
   $(containerSelector).show();
   var svg = d3.select(containerSelector)
     .append("svg")
-    .attr("class", "barChart");
+    .attr("class", "dis_chart");
   var data = [];
-  for (var i = 0; i < expt.length; i++){
-    data.push({
-      "expt": (typeof expt[i] == 'string') ? expt[i] : JSON.stringify(expt[i]),
-      "kl": optc[i]
-    });
+  for (var i=0; i<labels.length; i++){
+    if (counts[i] > 0) {
+      data.push({
+        "Label": JSON.stringify(labels[i]),
+        "Count": counts[i]
+      });
+    }
   };
   var chart = new dimple.chart(svg, data);
+  chart.setBounds(80, 20, 480, 110);
+  var yAxis = chart.addMeasureAxis("y", "Count");
+  yAxis.title = "Probability";
+  yAxis.tickFormat = ",.2f";
+  var xAxis = chart.addCategoryAxis("x", "Label");
+  xAxis.title = "Response";
+  xAxis.addOrderRule(function(x,y){return sortAlphaNum(x.Label, y.Label);});
+
+  var series = chart.addSeries(undefined, dimple.plot.bar);
+
+  chart.draw();
+}
+
+function distribution_chart(box, x){
+  var params = Array.prototype.slice.call(arguments, 2);
+  var labels = x.support(params);
+  var scores = _.map(labels, function(label){return x.score(params, label);});
+  if (_.find(scores, isNaN) !== undefined){
+    resultDiv.append(document.createTextNode("ERP with NaN scores!\n"));
+    return;
+  }
+  var counts = scores.map(Math.exp);
+  var boxSelector = "#" + box.attr('id');
+  dist_chart(boxSelector, labels, counts);
+}
+
+function generate_bar_distributions(e, data)
+{
+  var expt_index = -1;
+  for (var i = 0; i < data.length; i++)
+    if (data[i].expt == e.cy)
+      expt_index = i;
+
+  var resultPlus = $(activeCodeBox.parent().find(".resultPlus"));
+  resultPlus.empty();
+  resultPlus.show();
+  var erps = data[expt_index].erps;
+  resultPlus.append(document.createTextNode("Experiment: " + data[expt_index].expt + " \n\n"));
+  for (var i = 0; i < erps.length; i++) {
+    resultPlus.append(document.createTextNode("Model " + i + " distribution: \n"));
+    distribution_chart(resultPlus, erps[i]); 
+  }
+}
+
+function bar_chart(containerSelector, data, xlabel, ylabel){
+  $(containerSelector).show();
+  var svg = d3.select(containerSelector)
+    .append("svg")
+    .attr("class", "chart");
+  var expt = data.to_expt_list();
+  var optc = data.to_optc_list();
+  var erps = data.to_erps_list();
+  //console.log(erps)
+  var chart_data = [];
+  for (var i = 0; i < expt.length; i++){
+    chart_data.push({
+      "expt": (typeof expt[i] == 'string') ? expt[i] : JSON.stringify(expt[i]),
+      "kl": optc[i],
+      "erps": erps[i]
+    });
+  };
+  var chart = new dimple.chart(svg, chart_data);
   chart.setBounds(80, 30, 480, 250);
   var xAxis = chart.addMeasureAxis("x", "kl");
   xAxis.title = xlabel;
   xAxis.tickFormat = ",.2f";
   var yAxis = chart.addCategoryAxis("y", "expt");
   yAxis.title = ylabel;
-  chart.addSeries("expt", dimple.plot.bar);
+  var series = chart.addSeries(undefined, dimple.plot.bar);
   chart.draw();
+
+  series.shapes.on("click", function (e){generate_bar_distributions(e, chart_data) });
 }
 
+function generate_line_distributions(e, data)
+{
+  var expt_index = -1;
+  for (var i = 0; i < data.length; i++)
+    if ((data[i].npart == e.data[0].cx) && (data[i].kl == e.data[0].cy))
+      expt_index = i;
 
-function line_chart(containerSelector, expt, nprt, optc, xlabel, ylabel){
+  var resultPlus = $(activeCodeBox.parent().find(".resultPlus"));
+  resultPlus.empty();
+  resultPlus.show();
+  var erps = data[expt_index].erps;
+  resultPlus.append(document.createTextNode("Experiment: " + data[expt_index].expt + " \n\n"));
+  for (var i = 0; i < erps.length; i++) {
+    resultPlus.append(document.createTextNode("Model " + i + " distribution: \n"));
+    distribution_chart(resultPlus, erps[i]); 
+  }
+}
+
+function line_chart(containerSelector, data, xlabel, ylabel){
   $(containerSelector).show();
   var svg = d3.select(containerSelector)
     .append("svg")
-    .attr("class", "barChart");
-  var data = [];
+    .attr("class", "chart");
+  var expt = data.to_expt_list();
+  var optc = data.to_optc_list();
+  var nprt = data.to_nprt_list();
+  var erps = data.to_erps_list();
+  var chart_data = [];
   for (var i = 0; i < nprt.length; i++){
-    data.push({
-      "expt": expt[i],
+    chart_data.push({
+      "expt": (typeof expt[i] == 'string') ? expt[i] : JSON.stringify(expt[i]),
       "npart": nprt[i],
-      "kl": optc[i]
+      "kl": optc[i],
+      "erps": erps[i],
     });
   };
-  var chart = new dimple.chart(svg, data);
+  var chart = new dimple.chart(svg, chart_data);
   chart.setBounds(80, 30, 480, 250);
   var xAxis = chart.addCategoryAxis("x", "npart");
   xAxis.title = xlabel;
@@ -156,8 +265,10 @@ function line_chart(containerSelector, expt, nprt, optc, xlabel, ylabel){
   var yAxis = chart.addMeasureAxis("y", "kl");
   yAxis.title = null;
   yAxis.title = ylabel;
-  chart.addSeries("expt", dimple.plot.line);
+  var series = chart.addSeries("expt", dimple.plot.line);
   chart.draw();
+
+  series.shapes.on("click", function (e){generate_line_distributions(e, chart_data) });
 }
 
 
@@ -335,10 +446,21 @@ function setupCodeBox(element){
     { "id": "result_" + codeBoxCount,
       "class": "resultDiv" });
 
+  var resultPlus = $('<div/>',
+    { "id": "resultplus_" + codeBoxCount,
+      "class": "resultPlus" });
+
   var showResult = function(store, x){
     if (x !== undefined) {
       resultDiv.show();
       resultDiv.append(document.createTextNode(webpplObjectToText(x)));
+    }
+  };
+
+  var showResultPlus = function(store, x){
+    if (x !== undefined) {
+      resultPlus.show();
+      resultPlus.append(document.createTextNode(webpplObjectToText(x)));
     }
   };
 
@@ -385,6 +507,7 @@ function setupCodeBox(element){
   }
 
   $element.parent().append(resultDiv);
+  $element.parent().append(resultPlus);
 
   codeBoxCount += 1;
 
