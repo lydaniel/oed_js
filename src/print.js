@@ -81,6 +81,7 @@ var log = function(data)
 module.exports = 
 {
     format: format,
+    datum: datum,
     data: data,
     make_data: make_data,
     log: log

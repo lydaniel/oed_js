@@ -1,4 +1,4 @@
-// categorical priors
+// Categorical priors
 var skill_prior     = [0.01, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 0.99];
 var skill_prior_pmf = [1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00];
 
@@ -7,69 +7,66 @@ var decision_prior_pmf = [0.250,  0.750];
 
 var categorical = function(v,p) {return v[discrete(p)];}
 
-// decision making model
-var get_bet_erp = function(num, win) {
-  var bet_erp = Enumerate(function() {
+// Bettor's decision making model
+var bet_erp = function(num, win) {
+  var bet = function() {
     var test_skill = categorical(skill_prior, skill_prior_pmf);
     var test_decision = categorical(decision_prior, decision_prior_pmf);
-
     factor((binomial(test_skill, num) == win) ? 0 : -Infinity);
-
     return flip(Math.exp(test_decision*test_skill)/
                 (Math.exp(test_decision*test_skill) + Math.exp(test_decision*(1-test_skill))));
-  });
+  };
 
-  return bet_erp;
+  return Enumerate(bet);
 };
 
 // Arrogant reasoner model
-var make_arrogant_reasoner_erp = function(params) {
+var arrogant_reasoner_erp = function(params) {
   var l_num = params[0]; var l_win = params[1];
   var t_num = params[2]; var t_bet = params[3]; 
 
-  var arrogant_reasoner_erp = Enumerate(function() {
+  var arrogant_reasoner = function() {
     var test_skill = categorical(skill_prior, skill_prior_pmf);
     factor((binomial(test_skill, l_num) == l_win) ? 0 : -Infinity);
     return test_skill;
-  });
+  };
   
-  return arrogant_reasoner_erp;
+  return Enumerate(arrogant_reasoner);
 };
 
 // Deferent reasoner model
-var make_deferent_reasoner_erp = function(params) {
+var deferent_reasoner_erp = function(params) {
   var l_num = params[0]; var l_win = params[1];
   var t_num = params[2]; var t_bet = params[3]; 
 
-  var deferent_reasoner_erp = Enumerate(function()
-  {
+  var deferent_reasoner = function() {
     var t_bet_tf = (t_bet == 1);
     var test_skill = categorical(skill_prior, skill_prior_pmf);
     var t_win = binomial(test_skill, t_num);
-    var test_bet = sample(get_bet_erp(t_num, t_win));
+    var test_bet = sample(bet_erp(t_num, t_win));
     factor((test_bet == t_bet_tf) ? 0 : -Infinity);
     return test_skill;
-  });
+  };
   
-  return deferent_reasoner_erp;
+  return Enumerate(deferent_reasoner);
 };
 
 // Observant reasoner model
-var make_observant_reasoner_erp = function(params) {
+var observant_reasoner_erp = function(params) {
   var l_num = params[0]; var l_win = params[1];
   var t_num = params[2]; var t_bet = params[3]; 
 
-  var observant_reasoner_erp = Enumerate(function() {
+  var observant_reasoner = function() {
     var t_bet_tf = (t_bet == 1);
     var test_skill = categorical(skill_prior, skill_prior_pmf);
     var t_win = binomial(test_skill, t_num);
-    var test_bet = sample(get_bet_erp(t_num, t_win))
+    var test_bet = sample(bet_erp(t_num, t_win))
     factor(((binomial(test_skill, l_num) == l_win) && 
             (test_bet == t_bet_tf)) ? 0 : -Infinity);
     return test_skill;
-  });
+  };
   
-  return observant_reasoner_erp;
+  return Enumerate(observant_reasoner);
 };
 
 // List of experiment parameters 
@@ -83,11 +80,11 @@ var expt_list = oed.list_product([l_direct_obs, l_direct_win,
 
 // Execute the models and compute the information gain
 var results = map(function(expt) {
-                    var m1 = make_arrogant_reasoner_erp(expt);
-                    var m2 = make_deferent_reasoner_erp(expt);
-                    var m3 = make_observant_reasoner_erp(expt);
+                    var m1 = arrogant_reasoner_erp(expt);
+                    var m2 = deferent_reasoner_erp(expt);
+                    var m3 = observant_reasoner_erp(expt);
                     return [oed.get_expected_kl([m1,m2,m3], [1/3,1/3,1/3]), 
-                            [m1,m2,m3]];}, expt_list)
+                            [m1,m2,m3]];}, expt_list);
 var kl = map(first, results);
 var erps = map(second, results);
 

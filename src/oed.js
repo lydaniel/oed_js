@@ -254,6 +254,71 @@ var find_nearest = function(array, value)
     return array[smallest_index];
 }
 
+// Compute
+
+/*
+OED({models: [models…], 
+          priors: [model priors…], //if omitted then uniform
+	  experiments: […],
+	  linkingfn: foo, //if omitted assume identity. how do you indicate it’s parameters and their priors?
+	  other params?})
+*/
+
+var compute = function(oed_params) 
+{
+    console.log(oed_params)
+    var data = print.data();
+
+    if (oed_params.models_prior == undefined)
+        for (var i = 0; i < oed_params.model.length; i++)
+            oed_params.prior[i] = 1/oed_params.model.length;
+
+    if (oed_params.num_participants == undefined) 
+        oed_params.num_participants = [1];
+
+    if (oed_params.num_participants.length == 1)
+    {
+        console.log(oed_params.experiments)
+        for (var i = 0; i < oed_params.experiments.length; i++)
+        {
+            var erp_list = [];
+            console.log(oed_params.experiments[i])
+            for (var m = 0; m < oed_params.models.length; m++)
+            {
+                console.log(oed_params.models[m])
+                erp_list[m] = oed_params.models[m](oed_params.experiments[i]);
+                console.log(erp_list[m])
+            }
+            console.log(erp_list)
+                
+            data.push(new print.datum(oed_params.experiments[i],
+                                      get_expected_kl(erp_list, oed_params.models_prior),
+                                      oed_params.num_participants[0], 
+                                      erp_list));
+        }
+    }
+    else
+    {
+        for (var i = 0; i < oed_params.experiments.length; i++)
+        {
+            for (var j = 0; j < oed_params.num_participants.length; j++)
+            {
+                data.push(new print.datum(oed_params.experiments[i],
+                                          get_expected_kl_participants_sample(oed_params.models, 
+                                                                              oed_params.models_prior,
+                                                                              oed_params.num_participants[j],
+                                                                              oed_params.num_participants_samples),
+                                          oed_params.num_participants[j], 
+                                          oed_params.models));
+            }
+        }
+    }
+    
+    return data;
+};
+
+var test = function(x, y) {return x(y)};
+
 // Export
 
 module.exports = 
@@ -268,7 +333,9 @@ module.exports =
     format: print.format,
     log: print.log,
     make_data: print.make_data,
-    data: print.data
+    data: print.data,
+    test: test,
+    compute : compute
 };
 
 

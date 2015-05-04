@@ -4,8 +4,8 @@ var coin_prior_pmf = [1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00
 var categorical = function(v,p) {return v[discrete(p)];}
 
 // Bias coin model
-var make_bias_coin = function(sequence) {
-  return bias_coin = function() {
+var bias_coin_erp = function(sequence) {
+  var bias_coin = function() {
     var inferred_coin_erp = Enumerate(function() {
       var coin_p = categorical(coin_prior, coin_prior_pmf);
       var sequence_factor = sum(map(function(x) {
@@ -17,14 +17,15 @@ var make_bias_coin = function(sequence) {
     });
 
     var expected_coin_p = expectation(inferred_coin_erp);
-
     return flip(expected_coin_p);
-  }
-}
+  };
+
+  return Enumerate(bias_coin);
+};
 
 // Markov coin model
-var make_markov_coin = function(sequence) {
-  return markov_coin = function() {
+var markov_coin_erp = function(sequence) {
+  var markov_coin = function() {
     var inferred_coin_erp = Enumerate(function() {
       var transition_p = categorical(coin_prior, coin_prior_pmf);
       var sequence_factor = sum(map2(function(x,y) {
@@ -39,22 +40,23 @@ var make_markov_coin = function(sequence) {
     var expected_coin_p = expectation(inferred_coin_erp, 
                                       function(x) {return (last(sequence) == '1') ? 
                                                           1-x : x;});
-
     return flip(expected_coin_p);
-  }
-}
+  };
+
+  return Enumerate(markov_coin);
+};
 
 // Execute the models and compute the information gain
 var expt_list= ['0000', '0001', '0010', '0011', '0100', '0101', '0110', '0111', 
-                '1000', '1001', '1010', '1011', '1100', '1101', '1110', '1111']
+                '1000', '1001', '1010', '1011', '1100', '1101', '1110', '1111'];
 var results = map(function(expt) {
-                    var m1 = Enumerate(make_bias_coin(expt));
-                    var m2 = Enumerate(make_markov_coin(expt));
-                    return [oed.get_expected_kl([m1, m2], [0.5, 0.5]), [m1,m2]];}, expt_list)
+                    var m1 = bias_coin_erp(expt);
+                    var m2 = markov_coin_erp(expt);
+                    return [oed.get_expected_kl([m1, m2], [0.5, 0.5]), [m1,m2]];}, expt_list);
 var kl = map(first, results);
 var erps = map(second, results);
 
 var data = oed.format(expt_list, kl, true, 1, erps);
 oed.log(data)
-//oed_print_kl([data, "Information Gain", "Experiment"])
+//oed_print_kl([data, "Information Gain", "Experiment"]);
 

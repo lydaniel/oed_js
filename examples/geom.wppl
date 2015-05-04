@@ -2,25 +2,28 @@
 var support_size = 10;
 
 // Define candidate models
-var make_geom = function(p) {
-  return geom = function() {
-    return flip(p) ? 0 : 1+geom()
-  }
-}
+var geom_erp = function(p) {
+  var geom = function() {return flip(p) ? 0 : 1+geom();};
+  return Enumerate(geom, support_size+1);
+};
 
-var make_bin = function(p) {
-  return bin = function() {
-    return binomial(p, support_size);
-  }
-}
+var bin_erp = function(p) {
+  var bin = function() {return binomial(p, support_size);};
+  return Enumerate(bin);
+};
 
 // Execute models
 var expt = 0.2;
-var m1 = Enumerate(make_geom(expt), support_size+1)
-var m2 = Enumerate(make_bin(expt))
+var m1 = make_geom;
+var m2 = make_bin;
 //oed_print_erps([m1, m2])
 
 // Compute the information gain
 var model_belief = [0.4, 0.6]
-oed.get_expected_kl([m1, m2], model_belief)
+//oed.get_expected_kl([m1, m2], model_belief)
+/*
+oed.compute({models: [m1, m2], 
+             models_prior: model_belief,
+             experiments: [expt]})
+*/
 
