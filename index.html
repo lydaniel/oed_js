@@ -61,9 +61,9 @@
 
 <p> This introductory example illustrates a simple use case for designing experiments to differentiate between a truncated geometric distribution and a binomial distribution. 
 
-<p> The basic framework of OED is divided into two components. The first task is to define the candidate models to be differentiated using experiment design. Each model needs to be defined as an argumentless function for the subsequent WebPPL inference routines. However, as the models depend on choice of experiments, we create an argument-based wrapper (<code>make_geom</code>) that takes experiment as a parameter and returns an argumentless function (<code>geom</code>).
+<p> The basic framework of OED is divided into two components. The first task is to define the candidate models to be differentiated using experiment design. Each model needs to be defined as an argumentless function for the subsequent WebPPL inference routines (<code>geom</code>). However, as the models depend on choice of experiments, we create an argument-based wrapper (<code>geom_erp</code>) that takes the experiment as a parameter, executes an inference routing in WebPPL, and returns an Elementary Random Primitive (ERP), which is a data structure that summarizes the probability distribution of a random variables. 
 
-<p> The second task is to execute the models for a specific choice of experiment and compute the information gain using the OED interface. Executing an inference routine in WebPPL returns an Elementary Random Primitive (ERP), which is a data structure that summarizes the probability distribution of a random variables. Computing the information gain using <code>oed.get_expected_kl</code> requires an array of ERPs for each candidate model, as well as an array for the prior model belief, which describes the confidence that the corresponding candidate model is the correct one.
+<p> The second task is to execute the models for a specific choice of experiment and compute the information gain using the OED interface. Computing the information gain using <code>oed.get_expected_kl</code> requires an array of ERPs for each candidate model, as well as an array for the prior model belief, which describes the confidence that the corresponding candidate model is the correct one.
 
 <p> In the following example, we use OED to compute the information gain between a truncated geometric distribution and a binomial distribution, where the experiment is the respective success probability. We will compute the information gain for the experiment where <code>p=0.2</code>, and with a model belief of 0.4 and 0.6, for the truncated geometric distribution and binomial distribution, respectively.
 
@@ -72,59 +72,55 @@ var support_size = 10;
 ///
 
 // Define candidate models
-var make_geom = function(p) {
-  return geom = function() {
-    return flip(p) ? 0 : 1+geom()
-  }
-}
+var geom_erp = function(p) {
+  var geom = function() {return flip(p) ? 0 : 1+geom();};
+  return Enumerate(geom, support_size+1);
+};
 
-var make_bin = function(p) {
-  return bin = function() {
-    return binomial(p, support_size);
-  }
-}
+var bin_erp = function(p) {
+  var bin = function() {return binomial(p, support_size);};
+  return Enumerate(bin);
+};
 
 // Execute models
 var expt = 0.2;
-var m1 = Enumerate(make_geom(expt), support_size+1)
-var m2 = Enumerate(make_bin(expt))
-oed_print_erps([m1, m2])
+var m1 = geom_erp(expt);
+var m2 = bin_erp(expt);
+oed_print_erps([m1, m2]);
 
 // Compute the information gain
-var model_belief = [0.4, 0.6]
-oed.get_expected_kl([m1, m2], model_belief)
+var model_belief = [0.4, 0.6];
+oed.get_expected_kl([m1, m2], model_belief);
 </code></pre>
 
 <p> To understand the applications of OED, we begin by analyzing the distributions of both models: these two distributions are fairly similar and a likely response does not efficiently differentiate the models. As a result, the expected information gain from this experiment is 0.1001 nats.
 
 <p> In the next example, the experiment will be changed to <code>p=0.7</code>. 
 
-<pre><code>///fold: models
+<pre><code>///fold: candidate models
 var support_size = 10;
 
 // Define candidate models
-var make_geom = function(p) {
-  return geom = function() {
-    return flip(p) ? 0 : 1+geom()
-  }
-}
+var geom_erp = function(p) {
+  var geom = function() {return flip(p) ? 0 : 1+geom();};
+  return Enumerate(geom, support_size+1);
+};
 
-var make_bin = function(p) {
-  return bin = function() {
-    return binomial(p, support_size);
-  }
-}
+var bin_erp = function(p) {
+  var bin = function() {return binomial(p, support_size);};
+  return Enumerate(bin);
+};
 ///
 
 // Execute models
 var expt = 0.7;
-var m1 = Enumerate(make_geom(expt), support_size+1)
-var m2 = Enumerate(make_bin(expt))
-oed_print_erps([m1, m2])
+var m1 = geom_erp(expt);
+var m2 = bin_erp(expt);
+oed_print_erps([m1, m2]);
 
 // Compute the information gain
-var model_belief = [0.4, 0.6]
-oed.get_expected_kl([m1, m2], model_belief)
+var model_belief = [0.4, 0.6];
+oed.get_expected_kl([m1, m2], model_belief);
 </code></pre>
 
 <p> This experiment is significantly better at disambiguating the models as the two distributions are separated by a large margin. The truncated geometric distribution predicts responses with low values, while the binomial distribution predicts responses with high values. Thus, it is easy to determine the underlying model from any particular response. The expected information gain is 0.6461 nats, which is higher than the first experiment, denoting that it is better at differentiating the models.
@@ -150,8 +146,8 @@ var categorical = function(v,p) {return v[discrete(p)];}
 ///fold
 
 // Bias coin model
-var make_bias_coin = function(sequence) {
-  return bias_coin = function() {
+var bias_coin_erp = function(sequence) {
+  var bias_coin = function() {
     var inferred_coin_erp = Enumerate(function() {
       var coin_p = categorical(coin_prior, coin_prior_pmf);
       var sequence_factor = sum(map(function(x) {
@@ -163,14 +159,15 @@ var make_bias_coin = function(sequence) {
     });
 
     var expected_coin_p = expectation(inferred_coin_erp);
-
     return flip(expected_coin_p);
-  }
-}
+  };
+
+  return Enumerate(bias_coin);
+};
 
 // Markov coin model
-var make_markov_coin = function(sequence) {
-  return markov_coin = function() {
+var markov_coin_erp = function(sequence) {
+  var markov_coin = function() {
     var inferred_coin_erp = Enumerate(function() {
       var transition_p = categorical(coin_prior, coin_prior_pmf);
       var sequence_factor = sum(map2(function(x,y) {
@@ -185,23 +182,24 @@ var make_markov_coin = function(sequence) {
     var expected_coin_p = expectation(inferred_coin_erp, 
                                       function(x) {return (last(sequence) == '1') ? 
                                                           1-x : x;});
-
     return flip(expected_coin_p);
-  }
-}
+  };
+
+  return Enumerate(markov_coin);
+};
 
 // Execute the models and compute the information gain
 var expt_list= ['0000', '0001', '0010', '0011', '0100', '0101', '0110', '0111', 
-                '1000', '1001', '1010', '1011', '1100', '1101', '1110', '1111']
+                '1000', '1001', '1010', '1011', '1100', '1101', '1110', '1111'];
 var results = map(function(expt) {
-                    var m1 = Enumerate(make_bias_coin(expt));
-                    var m2 = Enumerate(make_markov_coin(expt));
-                    return [oed.get_expected_kl([m1, m2], [0.5, 0.5]), [m1,m2]];}, expt_list)
+                    var m1 = bias_coin_erp(expt);
+                    var m2 = markov_coin_erp(expt);
+                    return [oed.get_expected_kl([m1, m2], [0.5, 0.5]), [m1,m2]];}, expt_list);
 var kl = map(first, results);
 var erps = map(second, results);
 
 var data = oed.format(expt_list, kl, true, 1, erps);
-oed_print_kl([data, "Information Gain", "Experiment"])
+oed_print_kl([data, "Information Gain", "Experiment"]);
 </code></pre>
 
 <p> The results of the experiment design should agree with our intuitions. The most informative experiments are the symmetric pair 'HTHT' and 'THTH', since the <code>markov_coin</code> model strongly favors alternating coin flips while the <code>bias_coin</code> infers a fair weighting and does not favor either outcome. Following the same logic, the least informative experiments are the symmetric pair 'HHHH' and 'TTTT', since both models predict the same outcome. 
@@ -235,69 +233,66 @@ var categorical = function(v,p) {return v[discrete(p)];}
 ///
 
 ///fold: bettor's decision making model
-var get_bet_erp = function(num, win) {
-  var bet_erp = Enumerate(function() {
+var bet_erp = function(num, win) {
+  var bet = function() {
     var test_skill = categorical(skill_prior, skill_prior_pmf);
     var test_decision = categorical(decision_prior, decision_prior_pmf);
-
     factor((binomial(test_skill, num) == win) ? 0 : -Infinity);
-
     return flip(Math.exp(test_decision*test_skill)/
                 (Math.exp(test_decision*test_skill) + Math.exp(test_decision*(1-test_skill))));
-  });
+  };
 
-  return bet_erp;
+  return Enumerate(bet);
 };
 ///
 
 // Arrogant reasoner model
-var make_arrogant_reasoner_erp = function(params) {
+var arrogant_reasoner_erp = function(params) {
   var l_num = params[0]; var l_win = params[1];
   var t_num = params[2]; var t_bet = params[3]; 
 
-  var arrogant_reasoner_erp = Enumerate(function() {
+  var arrogant_reasoner = function() {
     var test_skill = categorical(skill_prior, skill_prior_pmf);
     factor((binomial(test_skill, l_num) == l_win) ? 0 : -Infinity);
     return test_skill;
-  });
+  };
   
-  return arrogant_reasoner_erp;
+  return Enumerate(arrogant_reasoner);
 };
 
 // Deferent reasoner model
-var make_deferent_reasoner_erp = function(params) {
+var deferent_reasoner_erp = function(params) {
   var l_num = params[0]; var l_win = params[1];
   var t_num = params[2]; var t_bet = params[3]; 
 
-  var deferent_reasoner_erp = Enumerate(function()
-  {
+  var deferent_reasoner = function() {
     var t_bet_tf = (t_bet == 1);
     var test_skill = categorical(skill_prior, skill_prior_pmf);
     var t_win = binomial(test_skill, t_num);
-    var test_bet = sample(get_bet_erp(t_num, t_win));
+    var test_bet = sample(bet_erp(t_num, t_win));
     factor((test_bet == t_bet_tf) ? 0 : -Infinity);
     return test_skill;
-  });
+  };
   
-  return deferent_reasoner_erp;
+  return Enumerate(deferent_reasoner);
 };
 
 // Observant reasoner model
-var make_observant_reasoner_erp = function(params) {
+var observant_reasoner_erp = function(params) {
   var l_num = params[0]; var l_win = params[1];
   var t_num = params[2]; var t_bet = params[3]; 
 
-  var observant_reasoner_erp = Enumerate(function() {
+  var observant_reasoner = function() {
     var t_bet_tf = (t_bet == 1);
     var test_skill = categorical(skill_prior, skill_prior_pmf);
     var t_win = binomial(test_skill, t_num);
-    var test_bet = sample(get_bet_erp(t_num, t_win))
+    var test_bet = sample(bet_erp(t_num, t_win))
     factor(((binomial(test_skill, l_num) == l_win) && 
             (test_bet == t_bet_tf)) ? 0 : -Infinity);
     return test_skill;
-  });
+  };
   
-  return observant_reasoner_erp;
+  return Enumerate(observant_reasoner);
 };
 
 // List of experiment parameters 
@@ -311,16 +306,16 @@ var expt_list = oed.list_product([l_direct_obs, l_direct_win,
 
 // Execute the models and compute the information gain
 var results = map(function(expt) {
-                    var m1 = make_arrogant_reasoner_erp(expt);
-                    var m2 = make_deferent_reasoner_erp(expt);
-                    var m3 = make_observant_reasoner_erp(expt);
+                    var m1 = arrogant_reasoner_erp(expt);
+                    var m2 = deferent_reasoner_erp(expt);
+                    var m3 = observant_reasoner_erp(expt);
                     return [oed.get_expected_kl([m1,m2,m3], [1/3,1/3,1/3]), 
-                            [m1,m2,m3]];}, expt_list)
+                            [m1,m2,m3]];}, expt_list);
 var kl = map(first, results);
 var erps = map(second, results);
 
 var data = oed.format(expt_list, kl, true, 1, erps)
-oed_print_kl([data, "Information Gain", "Experiment"])
+oed_print_kl([data, "Information Gain", "Experiment"]);
 </code></pre>
 
 <p> By enumerating over the experiments, we can analyze the effect of each parameter on its ability to differentiate the candidate models. If we click on the optimal experiment, <code>[5,0,30,1]</code>, we can see that it is able to strongly differentiate between the set of arrogant and observant reasoners and the deferent reasoner. This result is intuitive as it introduces the greatest conflict between the two streams of information: the direct observations suggest that the win percentage is low, yet the fellow bettor's behavior suggests that the win percentage is high. As a result, the arrogant reasoner would likely wager on the win, while the deferent reasoner would likely wager on a loss. The observant reasoner would reason that the most likely explaination for this conflict of information is that the fellow better is unreliable and would also likely wager on the win, although with less confidence than the arrogant reasoner. 
@@ -348,70 +343,67 @@ var categorical = function(v,p) {return v[discrete(p)];}
 ///
 
 ///fold: bettor's decision making model
-var get_bet_erp = function(num, win) {
-  var bet_erp = Enumerate(function() {
+var bet_erp = function(num, win) {
+  var bet = function() {
     var test_skill = categorical(skill_prior, skill_prior_pmf);
     var test_decision = categorical(decision_prior, decision_prior_pmf);
-
     factor((binomial(test_skill, num) == win) ? 0 : -Infinity);
-
     return flip(Math.exp(test_decision*test_skill)/
                 (Math.exp(test_decision*test_skill) + Math.exp(test_decision*(1-test_skill))));
-  });
+  };
 
-  return bet_erp;
+  return Enumerate(bet);
 };
 ///
 
-///fold: models
+///fold: social reasoning models
 // Arrogant reasoner model
-var make_arrogant_reasoner_erp = function(params) {
+var arrogant_reasoner_erp = function(params) {
   var l_num = params[0]; var l_win = params[1];
   var t_num = params[2]; var t_bet = params[3]; 
 
-  var arrogant_reasoner_erp = Enumerate(function() {
+  var arrogant_reasoner = function() {
     var test_skill = categorical(skill_prior, skill_prior_pmf);
     factor((binomial(test_skill, l_num) == l_win) ? 0 : -Infinity);
     return test_skill;
-  });
+  };
   
-  return arrogant_reasoner_erp;
+  return Enumerate(arrogant_reasoner);
 };
 
 // Deferent reasoner model
-var make_deferent_reasoner_erp = function(params) {
+var deferent_reasoner_erp = function(params) {
   var l_num = params[0]; var l_win = params[1];
   var t_num = params[2]; var t_bet = params[3]; 
 
-  var deferent_reasoner_erp = Enumerate(function()
-  {
+  var deferent_reasoner = function() {
     var t_bet_tf = (t_bet == 1);
     var test_skill = categorical(skill_prior, skill_prior_pmf);
     var t_win = binomial(test_skill, t_num);
-    var test_bet = sample(get_bet_erp(t_num, t_win));
+    var test_bet = sample(bet_erp(t_num, t_win));
     factor((test_bet == t_bet_tf) ? 0 : -Infinity);
     return test_skill;
-  });
+  };
   
-  return deferent_reasoner_erp;
+  return Enumerate(deferent_reasoner);
 };
 
 // Observant reasoner model
-var make_observant_reasoner_erp = function(params) {
+var observant_reasoner_erp = function(params) {
   var l_num = params[0]; var l_win = params[1];
   var t_num = params[2]; var t_bet = params[3]; 
 
-  var observant_reasoner_erp = Enumerate(function() {
+  var observant_reasoner = function() {
     var t_bet_tf = (t_bet == 1);
     var test_skill = categorical(skill_prior, skill_prior_pmf);
     var t_win = binomial(test_skill, t_num);
-    var test_bet = sample(get_bet_erp(t_num, t_win))
+    var test_bet = sample(bet_erp(t_num, t_win))
     factor(((binomial(test_skill, l_num) == l_win) && 
             (test_bet == t_bet_tf)) ? 0 : -Infinity);
     return test_skill;
-  });
+  };
   
-  return observant_reasoner_erp;
+  return Enumerate(observant_reasoner);
 };
 ///
 
@@ -422,9 +414,9 @@ var npart = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 
 // Execute the models and compute the information gain
 var data = oed.make_data();
 map(function(expt){
-      var m1 = make_arrogant_reasoner_erp(expt);
-      var m2 = make_deferent_reasoner_erp(expt);
-      var m3 = make_observant_reasoner_erp(expt);
+      var m1 = arrogant_reasoner_erp(expt);
+      var m2 = deferent_reasoner_erp(expt);
+      var m3 = observant_reasoner_erp(expt);
 
       map(function(n) {
           data.concat(oed.format([expt], 
