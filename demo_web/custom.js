@@ -53,9 +53,50 @@ function hist(s, k, a, lst) {
   return k(s, barChart(resultDivSelector, labels, counts));
 }
 
+function is_oed_data(x){
+  return (x && (x.to_erps_list != undefined) && (x.data.length != 0));
+}
+
+function oed_check_all_npart(x){
+  var nprt = x.data[0].nprt;
+  for (var i = 0; i < x.data.length; i++) {
+    if (x.data[i].nprt != nprt)
+      return false;
+  }
+  return true;
+}
+
+
 function print(store, k, a, x){
-  jsPrint(x);
+  if (is_oed_data(x)) {
+    oed_print(x);
+  } else{
+    jsPrint(x);
+  }
   return k(store);
+}
+
+function oed_print(x){
+  if (x.data.length == 1) {
+    var resultDiv = $(activeCodeBox.parent().find(".resultDiv"));
+    resultDiv.show();
+    resultDiv.append(document.createTextNode("Experiment \"" + x.data[0].expt + 
+                                             "\" information gain: " + x.data[0].optc + "\n\n"));
+    for (var i = 0; i < x.data[0].erps.length; i++) {
+      resultDiv.append(document.createTextNode("Model " + i + " distribution: \n"));
+      distribution_chart(resultDiv, x.data[0].erps[i]); 
+    }
+  } else if (oed_check_all_npart(x)) {
+    var resultDiv = $(activeCodeBox.parent().find(".resultDiv"));
+    resultDiv.show();
+    var resultDivSelector = "#" + resultDiv.attr('id');
+    bar_chart(resultDivSelector, x, "Information Gain", "Experiment");
+  } else {
+    var resultDiv = $(activeCodeBox.parent().find(".resultDiv"));
+    resultDiv.show();
+    var resultDivSelector = "#" + resultDiv.attr('id');
+    line_chart(resultDivSelector, x, "Number of Participants", "Information Gain");
+  }
 }
 
 function oed_print_erps(store, k, a, x){
@@ -261,7 +302,6 @@ function line_chart(containerSelector, data, xlabel, ylabel){
   chart.setBounds(80, 30, 480, 250);
   var xAxis = chart.addCategoryAxis("x", "npart");
   xAxis.title = xlabel;
-  xAxis.tickFormat = ",.2f";
   var yAxis = chart.addMeasureAxis("y", "kl");
   yAxis.title = null;
   yAxis.title = ylabel;
