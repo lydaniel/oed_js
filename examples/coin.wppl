@@ -49,14 +49,9 @@ var markov_coin_erp = function(sequence) {
 // Execute the models and compute the information gain
 var expt_list= ['0000', '0001', '0010', '0011', '0100', '0101', '0110', '0111', 
                 '1000', '1001', '1010', '1011', '1100', '1101', '1110', '1111'];
-var results = map(function(expt) {
-                    var m1 = bias_coin_erp(expt);
-                    var m2 = markov_coin_erp(expt);
-                    return [oed.get_expected_kl([m1, m2], [0.5, 0.5]), [m1,m2]];}, expt_list);
-var kl = map(first, results);
-var erps = map(second, results);
 
-var data = oed.format(expt_list, kl, true, 1, erps);
-oed.log(data)
-//oed_print_kl([data, "Information Gain", "Experiment"]);
+var data = OED({models: [bias_coin_erp, markov_coin_erp], 
+                experiments: expt_list})
+//print(data)
+data
 

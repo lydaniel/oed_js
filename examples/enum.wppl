@@ -79,16 +79,9 @@ var expt_list = oed.list_product([l_direct_obs, l_direct_win,
                                   l_social_obs, l_social_bet]);
 
 // Execute the models and compute the information gain
-var results = map(function(expt) {
-                    var m1 = arrogant_reasoner_erp(expt);
-                    var m2 = deferent_reasoner_erp(expt);
-                    var m3 = observant_reasoner_erp(expt);
-                    return [oed.get_expected_kl([m1,m2,m3], [1/3,1/3,1/3]), 
-                            [m1,m2,m3]];}, expt_list);
-var kl = map(first, results);
-var erps = map(second, results);
-
-var data = oed.format(expt_list, kl, true, 1, erps)
-oed.log(data)
-//oed_print_kl([data, "Information Gain", "Experiment"])
+var data = OED({models: [arrogant_reasoner_erp, deferent_reasoner_erp, 
+                         observant_reasoner_erp], 
+                experiments: expt_list})
+//print(data)
+data
 

@@ -51,9 +51,22 @@ var data = function()
     }
 };
 
+var make_datum = function(expt, optc, nprt, erps) 
+{
+    return new datum(expt, optc, nprt, erps);
+};
+
+/*
 var make_data = function() 
 {
     return new data();
+};
+*/
+var make_data = function(list) 
+{
+    var dd = new data();
+    dd.data = list;
+    return dd;
 };
 
 var format = function(inputs, kl, sort, nprt, erps) 
@@ -83,6 +96,7 @@ module.exports =
     format: format,
     datum: datum,
     data: data,
+    make_datum: make_datum,
     make_data: make_data,
     log: log
 };

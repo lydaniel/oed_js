@@ -3,6 +3,7 @@
 var pmf = require('./pmf.js');
 var comb = require('./comb.js');
 var print = require('./print.js');
+//var cps = require('./cps_header.js');
 
 // PMF helper functions 
 
@@ -132,21 +133,23 @@ var get_participants_sampler = function(pmf_list, num_participants, num_samples)
     var sample_counter = [];
     for (var m = 0; m < pmf_list.length; m++)
     {
-        sample_counter[m] = [];
+        sample_counter[m] = {};
         for (var i = 0; i < num_samples; i++)
         {
             var sample_participant = [];
             var p_list = pmf_list[m].to_p_list();
-            for (var j = 0; j < p_list.length; j++)
-                sample_participant[j] = 0;
+            //for (var j = 0; j < p_list.length; j++)
+            //    sample_participant[j] = 0;
 
             for (var j = 0; j < num_participants; j++)
                 sample_participant[multinomial_sample(p_list)] += 1;
 
             var sps = sample_participant.toString();
-                
+              
             sample_counter[m][sps] = (sample_counter[m][sps] == undefined) ? 1 : 
                                      sample_counter[m][sps] + 1;
+            //sample_counter[m][sample_participant] = (sample_counter[m][sample_participant] == undefined) ? 1 : 
+            //                                         sample_counter[m][sample_participant] + 1;
         }
     }
             
@@ -160,6 +163,7 @@ var get_entropy_of_response_participants_sample = function(pmf_list, model_belie
         for (var sc in sample_counter[m])
             if (joint_sample_counter_keys.indexOf(sc) == -1)
                 joint_sample_counter_keys.push(sc);
+            //joint_sample_counter_keys[sc] = 1;
 
     var p_response_sample = []
     for (var i = 0; i < joint_sample_counter_keys.length; i++)
@@ -172,6 +176,26 @@ var get_entropy_of_response_participants_sample = function(pmf_list, model_belie
                                     model_belief[m]*sc/num_samples;
         }
     }
+
+    /*
+    var joint_sample_counter_keys = [];
+    var p_response_sample = []
+    var i = 0;
+    for (var m = 0; m < pmf_list.length; m++)
+    {
+        for (var sc in sample_counter[m])
+        {
+            p_response_sample[i] = 0;
+            if (joint_sample_counter_keys.indexOf(sc) == -1)
+            {
+                joint_sample_counter_keys.push(sc);
+                p_response_sample[i] += (sc == undefined) ? 0 : 
+                                        model_belief[m]*sc/num_samples;
+                i++;
+            }
+        }
+    }
+    */
 
     var sum_p_response_sample = 0;
     for (var i = 0; i < p_response_sample.length; i++)
@@ -258,17 +282,155 @@ var find_nearest = function(array, value)
 
 /*
 OED({models: [models…], 
-          priors: [model priors…], //if omitted then uniform
-	  experiments: […],
-	  linkingfn: foo, //if omitted assume identity. how do you indicate it’s parameters and their priors?
-	  other params?})
+     priors: [model priors…], //if omitted then uniform
+     experiments: […],
+     linkingfn: foo, //if omitted assume identity. how do you indicate it’s parameters and their priors?
+     other params?})
 */
 
-var compute = function(oed_params) 
+/*
+var cps_map = function(s, k, a, fn, ar) {
+    //var ff = fn;
+    //console.log('ff: ', ff)
+    return ar.length == 0 ? [] : [fn(s, k, a, ar[0])].concat(cps_map(s, k, a, fn, ar.slice(1)));
+};
+*/
+
+/*
+var cps_for_each = function(s, k, a, fn, ar) {
+    //var ff = fn;
+    //console.log('ff: ', ff)
+    return ar.length == 0 ? [] : [fn(s, k, a, ar[0])].concat(cps_map(s, k, a, fn, ar.slice(1)));
+};
+
+function cps_for_each(s, k, a, fn, xs, i) {
+    i = (i === undefined) ? 0 : i;
+    if (i === xs.length) {
+        return k();
+    } else {
+        return fn(s, k, a, xs[i], i, xs, function() {
+            return cps_for_each(s, k, a, fn, xs, i + 1);
+        });
+    }
+}
+*/
+
+/*
+function cps_for_each(func, nextK, xs, i) {
+  i = (i === undefined) ? 0 : i;
+  if (i === xs.length) {
+    return nextK();
+  } else {
+    //console.log("func:", func)
+    return func(xs[i], i, xs, function() {
+      return cps_for_each(func, nextK, xs, i + 1);
+    });
+  }
+}
+
+var base_cont = function(s, v) {console.log("bc:", v); return [v]};
+
+function cps_map(func, baseK, xs, i) {
+  i = (i === undefined) ? xs.length-1 : i;
+  if (i == 0) {
+    console.log("done", i, xs[i], baseK)
+    return func(xs[i], i, xs, baseK);
+  } else {
+    console.log("running", i, xs[i], baseK)
+    return cps_map(func, 
+                   function(s, v) {return [v].concat(func(xs[i], i, xs, baseK));},
+                   xs,
+                   i-1);
+  }
+}
+
+var untrampoline = function(fn) {
+    while (typeof(fn) === 'function') {
+        //console.log("untramp", fn);
+        untrampoline(fn());
+    }
+    return fn;
+}
+
+var cps_exec = function(s, k, a, func, args) {
+    //console.log("func: ", func)
+    var exec = func(s, k, a, args);
+    //console.log("func: ", func)
+    return exec;
+};
+
+var compute = function(s, k, a, oed_params) 
 {
     console.log(oed_params)
     var data = print.data();
 
+    //to do: model input check
+    var oed_models = oed_params.models;
+
+    var oed_priors = (oed_params.models_prior == undefined) ? cps.make_list(models.length, 1/models.length()) :
+                                                              cps.normalize_list(oed_params.models_prior);
+
+    var oed_nparts = (oed_params.num_participants == undefined) ? [1] :
+                                                                 oed_params.num_participants;
+    //to do: experiment input check
+    var oed_expts = oed_params.experiments;
+
+    if (oed_nparts.length == 1)
+    {
+        //var xx = cps.map(function(expt) {
+        //            return cps.map(function(model) {return model(s, k, a, expt);}, oed_models)}, oed_expts)
+        //var exec_model = oed_models[0];
+        //console.log(exec_model)
+        //var xx = cps_exec(s, k, a, exec_model, oed_expts[0]);
+        //console.log(xx)
+        //var xx = cps_map(s, k, a, function(s, k, a, model) {return cps_exec(s, k, a, model, oed_expts[0]);}, oed_models)
+        //cps_for_each(s, k, a, cps_exec);
+        //console.log(oed_models[0](oed_expts[0]));
+        console.log(oed_models[0])
+        //console.log(cps_exec(s, k, a
+        //var xx = oed_models[0];
+        //var xx = cps_exec(s, k, a, oed_models[0], oed_expts[0]);
+        //return xx;
+        return k(s, cps_map(function(m, mi, ms, kk) {
+                                console.log("kk", kk);
+                                var zz = m(s, kk, a, oed_expts[0])();
+                                console.log("zz", zz);
+                                return zz;},
+                            base_cont, 
+                            oed_models));
+
+        //return cps_exec(s, k, a, oed_models[0], oed_expts[0]);
+        /*
+        var collect = [];
+        //var empty = function() {return [];};
+        //return cpsForEach(function(m, mi, ms, nextk){
+        var yy = cpsForEach(function(m, mi, ms, nextk){
+                       var collectK = function(s, v) {
+                           console.log("v: ", v);
+                           collect.push(v);
+                           console.log("collect: ", collect);
+                           nextk();
+                       }
+
+                       console.log("m: ", m);
+                       //var xx = untrampoline(m(s, collectK, a, oed_expts[0]));
+                       var xx = m(s, collectK, a, oed_expts[0]);
+                       console.log("xx: ", xx);
+                       //xx()
+                       //m(s, collectK, a, oed_expts[0]); nextk();}, 
+                       //nextk();}, 
+                       },
+                   function(){return collect;}, oed_models);
+        console.log("here", collect.map(untrampoline));
+        return k(s, yy);
+        */
+        //return k(s, function(){return collect;});
+        //return cps_exec(s, k, a, oed_models[0], oed_expts[0]);
+ //   }
+
+    //return oed_params.models[0](s, k, a, oed_params.experiments[0]);
+
+    /*
     if (oed_params.models_prior == undefined)
         for (var i = 0; i < oed_params.model.length; i++)
             oed_params.prior[i] = 1/oed_params.model.length;
@@ -286,7 +448,12 @@ var compute = function(oed_params)
             for (var m = 0; m < oed_params.models.length; m++)
             {
                 console.log(oed_params.models[m])
-                erp_list[m] = oed_params.models[m](oed_params.experiments[i]);
+                var model = oed_params.models[m];
+                console.log("model: ", model);
+                console.log("expt: ", oed_params.experiments[i]);
+                var erp = model(s, k, a, oed_params.experiments[i]);
+                console.log("done: ", erp);
+                erp_list[m] = erp;
                 console.log(erp_list[m])
             }
             console.log(erp_list)
@@ -313,13 +480,20 @@ var compute = function(oed_params)
             }
         }
     }
-    
+    */
+/*
     return data;
 };
+*/
 
-var test = function(x, y) {return x(y)};
+var test = function(s, k, a, x, y) {
+    var xx = x(s, k, a, y);
+    return xx;
+};
 
 // Export
+
+//console.log("test")
 
 module.exports = 
 {
@@ -333,9 +507,12 @@ module.exports =
     format: print.format,
     log: print.log,
     make_data: print.make_data,
+    make_datum: print.make_datum,
     data: print.data,
     test: test,
-    compute : compute
+    //compute : compute
 };
+
+//global.OED = compute;
 
 
